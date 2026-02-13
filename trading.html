@@ -3,83 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS HYBRID</title>
+    <title>NEXUS FINAL</title>
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <style>
-        :root { --bg: #000000; --card: #121212; --up: #00ff9d; --down: #ff3b30; --text: #e0e0e0; }
-        body { background-color: var(--bg); color: var(--text); margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-        
-        /* 헤더 */
-        header { padding: 15px; background: var(--card); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
-        .coin-title { font-size: 18px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
-        .live-tag { font-size: 9px; background: #ff0000; color: white; padding: 2px 4px; border-radius: 3px; margin-left: 5px; animation: pulse 1s infinite; }
-        .price-info { text-align: right; }
-        .current-price { font-size: 20px; font-weight: bold; color: var(--up); }
-        .balance-info { font-size: 11px; color: #888; margin-top: 4px; }
+        /* 기본 초기화 */
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { 
+            background-color: #000; color: #fff; 
+            font-family: -apple-system, sans-serif; 
+            height: 100vh; width: 100vw; overflow: hidden; 
+            display: flex; flex-direction: column; /* 세로 배치 고정 */
+        }
 
-        /* 차트 */
-        #chart-container { flex: 1; width: 100%; position: relative; background: #000; }
-        
-        /* 컨트롤러 */
-        .controls { background: var(--card); padding: 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1px solid #333; }
-        .btn { padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 800; color: #fff; cursor: pointer; transition: transform 0.1s; }
-        .btn:active { transform: scale(0.96); opacity: 0.9; }
-        .btn-buy { background: var(--up); color: #000; }
-        .btn-sell { background: var(--down); }
-        
-        .position-bar { grid-column: span 2; background: #222; padding: 10px; border-radius: 8px; font-size: 12px; display: flex; justify-content: space-between; margin-bottom: 5px; }
-        .pnl { font-weight: bold; }
-        .pnl.plus { color: var(--up); }
-        .pnl.minus { color: var(--down); }
+        /* 1. 상단 헤더 (60px 고정) */
+        header {
+            height: 60px; width: 100%;
+            background: #1a1a1a; 
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 15px; border-bottom: 1px solid #333;
+            flex-shrink: 0; /* 크기 줄어들지 않음 */
+        }
+        .coin-title { font-size: 18px; font-weight: bold; }
+        .price-box { text-align: right; }
+        .price { font-size: 20px; font-weight: bold; color: #00ff9d; }
 
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        /* 2. 차트 영역 (남은 공간 모두 차지) */
+        #chart-area {
+            flex-grow: 1; /* 남은 공간 꽉 채우기 */
+            width: 100%;
+            background-color: #151515; /* 차트 영역 확인용 색상 */
+            position: relative;
+        }
+
+        /* 3. 하단 컨트롤러 (140px 고정) */
+        .controls {
+            height: 140px; width: 100%;
+            background: #1a1a1a;
+            padding: 10px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            border-top: 1px solid #333;
+            flex-shrink: 0;
+        }
+        
+        .pos-info { 
+            grid-column: span 2; background: #222; 
+            height: 35px; border-radius: 6px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 0 10px; font-size: 13px;
+        }
+        
+        .btn { 
+            height: 70px; border: none; border-radius: 8px; 
+            font-size: 20px; font-weight: bold; color: #000; cursor: pointer; 
+        }
+        .btn-long { background: #00ff9d; }
+        .btn-short { background: #ff3b30; color: #fff; }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="coin-title">
-            <img src="https://assets.coingecko.com/coins/images/1/small/bitcoin.png" style="width:24px; border-radius:50%;" onerror="this.style.display='none'">
-            BTC/USDT <span class="live-tag">LIVE</span>
-        </div>
-        <div class="price-info">
-            <div id="price" class="current-price">Connecting...</div>
-            <div class="balance-info">자산: <span id="balance">10,000</span> USDT</div>
+        <div class="coin-title">BTC/USDT <span style="font-size:10px; color:#ff3b30; border:1px solid #ff3b30; padding:2px;">LIVE</span></div>
+        <div class="price-box">
+            <div id="price-txt" class="price">96,500.00</div>
+            <div style="font-size:11px; color:#888">Asset: <span id="asset-txt">10,000</span></div>
         </div>
     </header>
 
-    <div id="chart-container"></div>
+    <div id="chart-area"></div>
 
     <div class="controls">
-        <div class="position-bar">
-            <span>포지션: <span id="pos-type">없음</span></span>
-            <span id="pnl-text" class="pnl">PNL: 0.00%</span>
+        <div class="pos-info">
+            <span id="pos-txt">포지션: 없음</span>
+            <span id="pnl-txt" style="font-weight:bold; color:#888;">PNL: 0.00%</span>
         </div>
-        <button class="btn btn-buy" onclick="engine.executeTrade('LONG')">LONG</button>
-        <button class="btn btn-sell" onclick="engine.executeTrade('SHORT')">SHORT</button>
+        <button class="btn btn-long" onclick="bot.trade('LONG')">LONG</button>
+        <button class="btn btn-short" onclick="bot.trade('SHORT')">SHORT</button>
     </div>
 
     <script>
-        class TradingEngine {
+        class MobileBot {
             constructor() {
                 this.balance = 10000;
-                this.position = null; 
-                this.currentPrice = 95000; // 기본값
+                this.position = null;
+                this.price = 96500;
                 this.chart = null;
                 this.series = null;
                 this.markers = [];
-                this.ws = null;
             }
 
             init() {
-                // 1. 차트 생성
-                const container = document.getElementById('chart-container');
+                // 1. 차트 컨테이너 찾기
+                const container = document.getElementById('chart-area');
+                
+                // 2. 크기 직접 계산 (오류 방지)
+                // 컨테이너의 실제 화면상 크기를 가져옴
+                const rect = container.getBoundingClientRect();
+                const width = rect.width || window.innerWidth;
+                const height = rect.height || (window.innerHeight - 200); // 헤더+푸터 200px 제외
+
+                // 3. 차트 생성
                 this.chart = LightweightCharts.createChart(container, {
-                    layout: { background: { color: '#000000' }, textColor: '#888' },
-                    grid: { vertLines: { color: '#1a1a1a' }, horzLines: { color: '#1a1a1a' } },
-                    width: container.clientWidth,
-                    height: container.clientHeight,
-                    timeScale: { timeVisible: true, secondsVisible: false, borderColor: '#333' },
+                    width: width,
+                    height: height,
+                    layout: { background: { color: '#151515' }, textColor: '#ccc' },
+                    grid: { vertLines: { color: '#222' }, horzLines: { color: '#222' } },
+                    timeScale: { 
+                        timeVisible: true, 
+                        secondsVisible: false,
+                        rightOffset: 5,
+                        borderColor: '#333'
+                    },
                     rightPriceScale: { borderColor: '#333' },
                     crosshair: { mode: 1 },
                 });
@@ -89,159 +123,136 @@
                     borderVisible: false, wickUpColor: '#00ff9d', wickDownColor: '#ff3b30'
                 });
 
+                // 4. 리사이즈 대응 (화면 회전 등)
                 window.addEventListener('resize', () => {
-                    this.chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+                    const newRect = container.getBoundingClientRect();
+                    this.chart.applyOptions({ 
+                        width: newRect.width, 
+                        height: newRect.height 
+                    });
                 });
 
-                // 2. 데이터 로드 시도 (실패 시 가짜 데이터 사용)
-                this.loadDataSafe();
+                // 5. 데이터 생성 및 표시
+                this.startData();
             }
 
-            async loadDataSafe() {
-                let success = false;
-                try {
-                    // CryptoCompare 시도
-                    const res = await fetch('https://min-api.cryptocompare.com/data/v2/histominute?fsym=BTC&tsym=USDT&limit=100');
-                    const json = await res.json();
-                    if(json.Response === 'Success') {
-                        const candles = json.Data.Data.map(d => ({
-                            time: d.time, open: d.open, high: d.high, low: d.low, close: d.close
-                        }));
-                        this.series.setData(candles);
-                        this.currentPrice = candles[candles.length-1].close;
-                        success = true;
-                    }
-                } catch(e) {
-                    console.log("Network Blocked. Using Mock Data.");
-                }
-
-                // 실패했다면 즉시 가짜 데이터 생성 (검은 화면 방지)
-                if(!success) {
-                    this.generateMockData();
-                }
-
-                this.updateUI();
-                this.connectWebSocket();
-            }
-
-            generateMockData() {
-                // 95000달러 기준 가상 차트 생성
-                const candles = [];
+            startData() {
+                // 과거 100개 데이터 생성
+                const data = [];
                 let time = Math.floor(Date.now()/1000) - (100*60);
-                let price = 95000;
-                for(let i=0; i<100; i++) {
-                    let move = (Math.random() - 0.5) * 100;
-                    let open = price;
-                    let close = price + move;
-                    let high = Math.max(open, close) + Math.random()*50;
-                    let low = Math.min(open, close) - Math.random()*50;
-                    candles.push({ time: time + (i*60), open, high, low, close });
-                    price = close;
-                }
-                this.series.setData(candles);
-                this.currentPrice = price;
-            }
-
-            connectWebSocket() {
-                // 바이낸스 웹소켓 연결 (실시간 데이터)
-                this.ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@kline_1m');
+                let p = 96500;
                 
-                this.ws.onmessage = (event) => {
-                    const msg = JSON.parse(event.data);
-                    const k = msg.k;
-                    const candle = {
-                        time: k.t / 1000,
-                        open: parseFloat(k.o),
-                        high: parseFloat(k.h),
-                        low: parseFloat(k.l),
-                        close: parseFloat(k.c)
-                    };
-                    this.currentPrice = candle.close;
-                    this.series.update(candle);
-                    this.updateUI();
-                    this.updatePnL();
-                };
+                for(let i=0; i<100; i++) {
+                    let move = (Math.random() - 0.5) * 60;
+                    let close = p + move;
+                    let open = p;
+                    let high = Math.max(open, close) + Math.random()*20;
+                    let low = Math.min(open, close) - Math.random()*20;
+                    data.push({ time: time + i*60, open, high, low, close });
+                    p = close;
+                }
+                
+                this.series.setData(data);
+                this.price = p;
+                
+                // [중요] 차트를 데이터에 딱 맞춤
+                this.chart.timeScale().fitContent();
+                
+                // 실시간 움직임 시작
+                setInterval(() => this.updateTick(), 1000);
             }
 
-            executeTrade(side) {
-                if (this.position && this.position.type !== side) {
-                    this.closePosition();
+            updateTick() {
+                // 가격 랜덤 변동
+                const move = (Math.random() - 0.5) * 30;
+                this.price += move;
+                
+                // 차트 업데이트 (마지막 봉 갱신 효과)
+                const last = this.series.data()[this.series.data().length-1];
+                const updated = {
+                    time: last.time,
+                    open: last.open,
+                    high: Math.max(last.high, this.price),
+                    low: Math.min(last.low, this.price),
+                    close: this.price
+                };
+                this.series.update(updated);
+                
+                // UI 업데이트
+                this.updateUI();
+            }
+
+            trade(side) {
+                if(this.position && this.position.type !== side) {
+                    this.close();
                     return;
                 }
-                if (this.position) return alert("이미 포지션이 있습니다.");
-
-                this.position = {
-                    type: side,
-                    entry: this.currentPrice,
-                    size: (this.balance * 0.98) / this.currentPrice
-                };
+                if(this.position) return alert("이미 포지션이 있습니다.");
                 
-                // 마커 표시
+                this.position = { type: side, entry: this.price, size: (this.balance*0.98)/this.price };
+                
+                // 마커
                 const time = this.series.data()[this.series.data().length-1].time;
-                this.markers.push({
-                    time: time,
-                    position: side === 'LONG' ? 'belowBar' : 'aboveBar',
-                    color: side === 'LONG' ? '#00ff9d' : '#ff3b30',
-                    shape: side === 'LONG' ? 'arrowUp' : 'arrowDown',
-                    text: side
+                this.markers.push({ 
+                    time, position: side==='LONG'?'belowBar':'aboveBar', 
+                    color: side==='LONG'?'#00ff9d':'#ff3b30', 
+                    shape: side==='LONG'?'arrowUp':'arrowDown', text: side 
                 });
                 this.series.setMarkers(this.markers);
-                
-                if(navigator.vibrate) navigator.vibrate(50);
                 this.updateUI();
             }
 
-            closePosition() {
-                if (!this.position) return;
-                const diff = (this.currentPrice - this.position.entry) / this.position.entry;
-                const pnlRate = this.position.type === 'LONG' ? diff : -diff;
-                this.balance += (this.position.size * this.currentPrice * pnlRate);
-
+            close() {
+                if(!this.position) return;
+                const diff = (this.price - this.position.entry) / this.position.entry;
+                const pnl = this.position.type === 'LONG' ? diff : -diff;
+                this.balance += (this.position.size * this.price * pnl);
+                
                 const time = this.series.data()[this.series.data().length-1].time;
-                this.markers.push({
-                    time: time,
-                    position: this.position.type === 'LONG' ? 'aboveBar' : 'belowBar',
-                    color: '#f0b90b', shape: 'circle', text: 'Close'
-                });
+                this.markers.push({ time, position: 'aboveBar', color: '#f0b90b', shape: 'circle', text: 'Close' });
                 this.series.setMarkers(this.markers);
-
+                
                 this.position = null;
                 this.updateUI();
-                if(navigator.vibrate) navigator.vibrate([50, 50]);
-            }
-
-            updatePnL() {
-                const el = document.getElementById('pnl-text');
-                if (!this.position) {
-                    el.innerText = "PNL: 0.00%";
-                    el.className = "pnl";
-                    return;
-                }
-                const diff = (this.currentPrice - this.position.entry) / this.position.entry;
-                const pnlRate = (this.position.type === 'LONG' ? diff : -diff) * 100;
-                el.innerText = `PNL: ${pnlRate.toFixed(2)}%`;
-                el.className = pnlRate >= 0 ? "pnl plus" : "pnl minus";
             }
 
             updateUI() {
-                const priceEl = document.getElementById('price');
-                priceEl.innerText = this.currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2});
+                const elPrice = document.getElementById('price-txt');
+                elPrice.innerText = this.price.toLocaleString(undefined, {minimumFractionDigits: 2});
                 
                 if(this.position) {
-                    const isWin = (this.position.type === 'LONG' && this.currentPrice > this.position.entry) ||
-                                  (this.position.type === 'SHORT' && this.currentPrice < this.position.entry);
-                    priceEl.style.color = isWin ? 'var(--up)' : 'var(--down)';
+                    const isWin = (this.position.type==='LONG' && this.price > this.position.entry) ||
+                                  (this.position.type==='SHORT' && this.price < this.position.entry);
+                    elPrice.style.color = isWin ? '#00ff9d' : '#ff3b30';
                 } else {
-                    priceEl.style.color = 'var(--up)';
+                    elPrice.style.color = '#00ff9d';
                 }
-                document.getElementById('balance').innerText = Math.floor(this.balance).toLocaleString();
-                document.getElementById('pos-type').innerText = this.position ? this.position.type : "없음";
-                document.getElementById('pos-type').style.color = this.position ? (this.position.type === 'LONG' ? 'var(--up)' : 'var(--down)') : '#888';
+                
+                document.getElementById('asset-txt').innerText = Math.floor(this.balance).toLocaleString();
+                
+                const elPnl = document.getElementById('pnl-txt');
+                const elPos = document.getElementById('pos-txt');
+                
+                if(this.position) {
+                    elPos.innerText = `포지션: ${this.position.type}`;
+                    elPos.style.color = this.position.type==='LONG'?'#00ff9d':'#ff3b30';
+                    
+                    const diff = (this.price - this.position.entry) / this.position.entry;
+                    const roe = (this.position.type==='LONG'?diff:-diff)*100;
+                    elPnl.innerText = `PNL: ${roe.toFixed(2)}%`;
+                    elPnl.style.color = roe >= 0 ? '#00ff9d' : '#ff3b30';
+                } else {
+                    elPos.innerText = "포지션: 없음";
+                    elPos.style.color = "#fff";
+                    elPnl.innerText = "PNL: 0.00%";
+                    elPnl.style.color = "#888";
+                }
             }
         }
 
-        const engine = new TradingEngine();
-        window.onload = () => engine.init();
+        const bot = new MobileBot();
+        // 화면이 다 그려진 후 0.1초 뒤에 실행 (안전장치)
+        window.onload = () => setTimeout(() => bot.init(), 100);
     </script>
 </body>
 </html>
