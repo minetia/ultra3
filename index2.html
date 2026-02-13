@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEXUS MOBILE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Mobile First CSS */
+        :root { --bg: #000; --card: #111; --text: #eee; --up: #ff4d4d; --down: #4d94ff; --neon: #00ff9d; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 20px; padding-bottom: 80px; -webkit-font-smoothing: antialiased; }
+        
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .status-dot { width: 10px; height: 10px; background: #333; border-radius: 50%; box-shadow: 0 0 5px #333; transition: 0.3s; }
+        .status-dot.active { background: var(--neon); box-shadow: 0 0 10px var(--neon); }
+
+        /* Main Card */
+        .card { background: var(--card); border-radius: 16px; padding: 24px; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(255,255,255,0.05); }
+        .label { font-size: 12px; color: #888; margin-bottom: 8px; display: block; }
+        .big-number { font-size: 32px; font-weight: 800; letter-spacing: -1px; margin: 0; }
+        .sub-number { font-size: 14px; margin-top: 5px; font-weight: 500; }
+        
+        /* Action Button */
+        .action-btn { width: 100%; height: 60px; border-radius: 12px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; background: #333; color: #888; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .action-btn.start { background: rgba(0, 255, 157, 0.2); color: var(--neon); border: 1px solid var(--neon); }
+        .action-btn.stop { background: rgba(255, 77, 77, 0.2); color: var(--up); border: 1px solid var(--up); }
+
+        /* Log List */
+        .log-container { max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 11px; }
+        .log-item { padding: 6px 0; border-bottom: 1px solid #222; color: #666; }
+        .log-item.buy { color: var(--up); } 
+        .log-item.sell { color: var(--down); }
+
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 60px; background: #161616; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #333; }
+        .nav-item { color: #555; font-size: 20px; padding: 10px; }
+        .nav-item.active { color: #fff; }
+
+        .up { color: var(--up); }
+        .down { color: var(--down); }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2 style="margin:0; font-weight:800;">NEXUS <span style="color:var(--neon)">M</span></h2>
+        <div id="connectionStatus" class="status-dot"></div>
+    </div>
+
+    <div class="card">
+        <span class="label">ESTIMATED ASSETS</span>
+        <h1 id="totalAsset" class="big-number">Loading...</h1>
+        <div id="pnlInfo" class="sub-number">0 KRW (0.00%)</div>
+    </div>
+
+    <div class="card" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <div>
+            <span class="label">CURRENT (BTC)</span>
+            <div id="curPrice" style="font-size:18px; font-weight:bold;">-</div>
+        </div>
+        <div>
+            <span class="label">RSI (14)</span>
+            <div id="rsiValue" style="font-size:18px; font-weight:bold;">-</div>
+        </div>
+    </div>
+
+    <button id="toggleBtn" class="action-btn">
+        <i class="fas fa-power-off"></i> SYSTEM READY
+    </button>
+    <div style="text-align:center; margin-top:10px; font-size:11px; color:#555;">
+        <i class="fas fa-mobile-alt"></i> 화면 꺼짐 방지(WakeLock) 자동 활성
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+        <span class="label">ACTIVITY LOG</span>
+        <div id="logBox" class="log-container"></div>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="nav-item active"><i class="fas fa-home"></i></div>
+        <div class="nav-item"><i class="fas fa-chart-line"></i></div>
+        <div class="nav-item"><i class="fas fa-cog"></i></div>
+    </nav>
+
+    <script src="mobile-core.js"></script>
+</body>
+</html>
