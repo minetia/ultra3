@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEXUS ONE - MOBILE</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-wrap">
+        <header class="status-bar">
+            <div class="active-status">
+                <span id="status-dot" class="dot"></span>
+                <span id="status-text">SYSTEM READY</span>
+            </div>
+            <div class="balance-display">
+                <small>Available Balance</small>
+                <h2 id="total-balance">10,000.00 <span>USDT</span></h2>
+            </div>
+        </header>
+
+        <main class="content-area">
+            <div class="pnl-card">
+                <div class="pnl-header">DAILY PNL</div>
+                <div id="daily-pnl" class="pnl-val">+0.00%</div>
+            </div>
+
+            <div class="log-container" id="terminal">
+                <div class="log-line sys">Welcome to Nexus Quantum.</div>
+            </div>
+        </main>
+
+        <nav class="control-panel">
+            <div class="quick-settings">
+                <button onclick="setLeverage(10)">10x</button>
+                <button onclick="setLeverage(20)">20x</button>
+                <button onclick="setLeverage(50)">50x</button>
+            </div>
+            
+            <div class="main-actions">
+                <button id="btn-long" class="action-btn buy" onclick="handleTrade('LONG')">LONG</button>
+                <button id="btn-toggle" class="power-btn" onclick="toggleAuto()">
+                    <i class="fas fa-power-off"></i>
+                </button>
+                <button id="btn-short" class="action-btn sell" onclick="handleTrade('SHORT')">SHORT</button>
+            </div>
+            
+            <div class="tab-menu">
+                <i class="fas fa-chart-line active"></i>
+                <i class="fas fa-history"></i>
+                <i class="fas fa-cog"></i>
+            </div>
+        </nav>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
