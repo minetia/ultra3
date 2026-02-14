@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEXUS HYPERCAR</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #050505;
+            --carbon: #111;
+            --glass: rgba(255, 255, 255, 0.05);
+            --neon-blue: #00f3ff;
+            --neon-red: #ff003c;
+            --neon-green: #39ff14;
+            --text: #e0e0e0;
+            --hud-border: 1px solid rgba(0, 243, 255, 0.2);
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            background-color: var(--bg);
+            /* 카본 패턴 배경 */
+            background-image: 
+                linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%, #0a0a0a),
+                linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%, #0a0a0a);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            color: var(--text);
+            margin: 0;
+            font-family: 'Rajdhani', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- 1. HUD HEADER (계기판) --- */
+        header {
+            height: 90px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 100%);
+            border-bottom: 2px solid var(--neon-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+            z-index: 10;
+        }
+
+        .dashboard-main {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .rpm-gauge {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+        .rpm-label { font-size: 10px; color: #888; letter-spacing: 2px; }
+
+        .total-pnl {
+            text-align: right;
+        }
+        .pnl-val {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .pnl-val.plus { color: var(--neon-green); text-shadow: 0 0 10px var(--neon-green); }
+        .pnl-val.minus { color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red); }
+
+        /* --- 2. ENGINE GRID (10코인) --- */
+        #engine-grid {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2열 배치 */
+            gap: 10px;
+            align-content: start;
+        }
+
+        .cylinder-card {
+            background: rgba(20, 20, 20, 0.8);
+            border: var(--hud-border);
+            border-radius: 8px;
+            padding: 10px;
+            position: relative;
+            transition: 0.2s;
+            backdrop-filter: blur(5px);
+        }
+        
+        /* 매수 상태일 때 글로우 효과 */
+        .cylinder-card.active {
+            border-color: var(--neon-green);
+            box-shadow: inset 0 0 15px rgba(57, 255, 20, 0.1);
+        }
+
+        .coin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .coin-sym { font-weight: 800; font-size: 14px; color: #fff; }
+        .coin-price { font-family: monospace; font-size: 13px; color: #aaa; }
+
+        .status-bar {
+            height: 4px;
+            background: #333;
+            width: 100%;
+            border-radius: 2px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        .status-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s;
+        }
+        .buy-fill { background: var(--neon-green); width: 100%; box-shadow: 0 0 5px var(--neon-green); }
+        .wait-fill { background: #333; width: 0%; }
+
+        .pnl-tag {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        /* --- 3. ECU CONSOLE (로그) --- */
+        .ecu-panel {
+            height: 160px;
+            background: #000;
+            border-top: 2px solid var(--neon-red);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ecu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .start-btn {
+            background: linear-gradient(135deg, #333, #000);
+            border: 1px solid var(--neon-red);
+            color: var(--neon-red);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-family: 'Orbitron';
+            font-size: 12px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 0, 60, 0.2);
+            transition: 0.2s;
+        }
+        .start-btn.running {
+            background: var(--neon-red);
+            color: #000;
+            box-shadow: 0 0 20px var(--neon-red);
+            animation: pulse 1s infinite;
+        }
+
+        .log-terminal {
+            flex: 1;
+            background: rgba(10, 10, 10, 0.9);
+            border: 1px solid #333;
+            padding: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            color: var(--neon-blue);
+            overflow-y: auto;
+            border-radius: 4px;
+        }
+        .log-line { margin-bottom: 3px; border-bottom: 1px solid #111; }
+        .log-buy { color: var(--neon-green); }
+        .log-sell { color: var(--neon-red); }
+        .log-sys { color: #fff; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        
+        /* 스크롤바 커스텀 */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="dashboard-main">
+            <div class="rpm-gauge" id="total-asset">10,000,000</div>
+            <div class="rpm-label">TURBO ASSET (KRW)</div>
+        </div>
+        <div class="total-pnl">
+            <div class="pnl-val" id="total-pnl">0.00%</div>
+            <div class="rpm-label">RPM (PROFIT)</div>
+        </div>
+    </header>
+
+    <div id="engine-grid">
+        </div>
+
+    <div class="ecu-panel">
+        <div class="ecu-header">
+            <span style="font-size:12px; color:#666; font-weight:bold;">ECU DIAGNOSTICS</span>
+            <button class="start-btn" id="ignition-btn" onclick="sys.toggleIgnition()">ENGINE START</button>
+        </div>
+        <div class="log-terminal" id="sys-log">
+            <div class="log-line log-sys">[SYSTEM] HYPERCAR AI LOADED...</div>
+            <div class="log-line log-sys">[SYSTEM] WAITING FOR IGNITION...</div>
+        </div>
+    </div>
+
+    <script>
+        class HyperCarAI {
+            constructor() {
+                this.running = false;
+                this.balance = 10000000; // 초기 자본 1,000만원
+                this.startBalance = 10000000;
+                
+                // 10개 코인 데이터 (가상 시뮬레이션용)
+                this.coins = [
+                    { id: 'BTC', name: 'BITCOIN', price: 96000000, hold: 0, entry: 0 },
+                    { id: 'ETH', name: 'ETHEREUM', price: 3500000, hold: 0, entry: 0 },
+                    { id: 'XRP', name: 'RIPPLE', price: 850, hold: 0, entry: 0 },
+                    { id: 'SOL', name: 'SOLANA', price: 180000, hold: 0, entry: 0 },
+                    { id: 'DOGE', name: 'DOGE', price: 180, hold: 0, entry: 0 },
+                    { id: 'ADA', name: 'CARDANO', price: 700, hold: 0, entry: 0 },
+                    { id: 'DOT', name: 'POLKADOT', price: 10000, hold: 0, entry: 0 },
+                    { id: 'MATIC', name: 'POLYGON', price: 900, hold: 0, entry: 0 },
+                    { id: 'LINK', name: 'CHAINLINK', price: 20000, hold: 0, entry: 0 },
+                    { id: 'AVAX', name: 'AVALANCHE', price: 45000, hold: 0, entry: 0 }
+                ];
+
+                this.renderGrid();
+            }
+
+            // HTML 그리드 생성
+            renderGrid() {
+                const grid = document.getElementById('engine-grid');
+                grid.innerHTML = '';
+                this.coins.forEach((c, idx) => {
+                    const card = document.createElement('div');
+                    card.className = 'cylinder-card';
+                    card.id = `card-${idx}`;
+                    card.innerHTML = `
+                        <div class="coin-header">
+                            <span class="coin-sym">${c.id}</span>
+                            <span class="coin-price" id="price-${idx}">${c.price.toLocaleString()}</span>
+                        </div>
+                        <div class="status-bar">
+                            <div class="status-fill" id="bar-${idx}"></div>
+                        </div>
+                        <div class="pnl-tag" id="pnl-${idx}" style="color:#666">READY</div>
+                    `;
+                    grid.appendChild(card);
+                });
+            }
+
+            toggleIgnition() {
+                this.running = !this.running;
+                const btn = document.getElementById('ignition-btn');
+                
+                if (this.running) {
+                    btn.innerText = "ENGINE STOP";
+                    btn.classList.add('running');
+                    this.log("🚀 ENGINE STARTED. AI AUTO-PILOT ENGAGED.", "sys");
+                    this.loop = setInterval(() => this.tick(), 1000); // 1초마다 엔진 회전
+                } else {
+                    btn.innerText = "ENGINE START";
+                    btn.classList.remove('running');
+                    this.log("🛑 ENGINE CUT OFF.", "sys");
+                    clearInterval(this.loop);
+                }
+            }
+
+            // 엔진 틱 (시세 변동 및 매매 로직)
+            tick() {
+                let totalValuation = this.balance;
+
+                this.coins.forEach((c, idx) => {
+                    // 1. 시세 랜덤 변동 (-1.5% ~ +1.5%)
+                    const volatility = (Math.random() - 0.48) * 0.03; 
+                    c.price = Math.floor(c.price * (1 + volatility));
+                    
+                    // UI 업데이트
+                    document.getElementById(`price-${idx}`).innerText = c.price.toLocaleString();
+
+                    // 2. AI 매매 로직
+                    if (c.hold === 0) {
+                        // 매수 조건: 랜덤한 "급락" 시뮬레이션 or 확률
+                        if (Math.random() > 0.85) {
+                            this.buy(idx);
+                        }
+                    } else {
+                        // 매도 조건: 수익률 계산
+                        const pnlRate = ((c.price - c.entry) / c.entry) * 100;
+                        this.updateCardPNL(idx, pnlRate);
+                        
+                        // 익절 3% 이상, 손절 -2% 이하
+                        if (pnlRate > 3.0 || pnlRate < -2.0) {
+                            this.sell(idx, pnlRate);
+                        }
+
+                        // 평가금 합산
+                        const val = c.hold * c.price;
+                        totalValuation += (val - (c.hold * c.entry)); // 원금 제외한 평가손익 반영을 위해
+                    }
+                });
+
+                // 전체 자산 업데이트
+                this.updateDashboard(totalValuation);
+            }
+
+            buy(idx) {
+                const c = this.coins[idx];
+                const investAmt = 1000000; // 종목당 100만원 투입 가정
+                
+                if (this.balance >= investAmt) {
+                    this.balance -= investAmt;
+                    c.hold = investAmt / c.price;
+                    c.entry = c.price;
+                    
+                    // UI 효과
+                    document.getElementById(`card-${idx}`).classList.add('active');
+                    document.getElementById(`bar-${idx}`).className = 'status-fill buy-fill';
+                    
+                    this.log(`[BUY] ${c.id} 매수체결 @ ${c.price.toLocaleString()}`, "buy");
+                }
+            }
+
+            sell(idx, pnlRate) {
+                const c = this.coins[idx];
+                const returnAmt = c.hold * c.price;
+                
+                this.balance += returnAmt;
+                const profit = returnAmt - (c.hold * c.entry);
+                
+                c.hold = 0;
+                c.entry = 0;
+
+                // UI 리셋
+                document.getElementById(`card-${idx}`).classList.remove('active');
+                document.getElementById(`bar-${idx}`).className = 'status-fill';
+                document.getElementById(`pnl-${idx}`).innerText = "READY";
+                document.getElementById(`pnl-${idx}`).style.color = "#666";
+
+                const type = profit > 0 ? "sell" : "sell"; // 색상은 CSS로 처리
+                this.log(`[SELL] ${c.id} 청산완료 | 수익: ${Math.floor(profit).toLocaleString()} (${pnlRate.toFixed(2)}%)`, profit > 0 ? "buy" : "sell");
+            }
+
+            updateCardPNL(idx, rate) {
+                const el = document.getElementById(`pnl-${idx}`);
+                el.innerText = `${rate > 0 ? '+' : ''}${rate.toFixed(2)}%`;
+                el.style.color = rate >= 0 ? "var(--neon-green)" : "var(--neon-red)";
+            }
+
+            updateDashboard(currentTotal) {
+                const elVal = document.getElementById('total-asset');
+                const elPnl = document.getElementById('total-pnl');
+
+                // 자산 애니메이션 효과 (숫자 흔들림)
+                const displayVal = Math.floor(this.balance + this.coins.reduce((acc, c) => acc + (c.hold * c.price), 0));
+                elVal.innerText = displayVal.toLocaleString();
+
+                const totalRate = ((displayVal - this.startBalance) / this.startBalance) * 100;
+                elPnl.innerText = `${totalRate > 0 ? '+' : ''}${totalRate.toFixed(2)}%`;
+                
+                if(totalRate > 0) {
+                    elPnl.className = "pnl-val plus";
+                    elPnl.style.textShadow = "0 0 15px var(--neon-green)";
+                } else if(totalRate < 0) {
+                    elPnl.className = "pnl-val minus";
+                    elPnl.style.textShadow = "0 0 15px var(--neon-red)";
+                }
+            }
+
+            log(msg, type) {
+                const term = document.getElementById('sys-log');
+                const line = document.createElement('div');
+                line.className = `log-line log-${type}`;
+                const time = new Date().toLocaleTimeString('ko-KR', {hour12:false});
+                line.innerText = `[${time}] ${msg}`;
+                term.prepend(line); // 최신 로그가 위로
+                
+                // 로그 50개 유지
+                if(term.children.length > 50) term.removeChild(term.lastChild);
+            }
+        }
+
+        const sys = new HyperCarAI();
+    </script>
+</body>
+</html>
