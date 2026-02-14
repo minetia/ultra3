@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS ZOO MUTE</title>
+    <title>NEXUS ZOO SYSTEM (FINAL)</title>
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -14,6 +14,7 @@
             --text: #eee;
             --green: #00E676; 
             --red: #FF1744;   
+            --blue: #2979FF;
             
             --dog-bg: #1565c0; --dog-txt: #fff;
             --cat-bg: #4a148c; --cat-txt: #fff;
@@ -21,86 +22,94 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
         body { 
             background-color: var(--bg); color: var(--text); 
             font-family: 'Pretendard', sans-serif;
-            height: 100vh; width: 100vw; overflow: hidden; 
+            /* 모바일 높이 문제 해결을 위해 dvh 사용 */
+            height: 100vh; 
+            height: 100dvh; 
+            width: 100vw; overflow: hidden; 
             display: flex; flex-direction: column; 
         }
 
-        /* 1. 상단 정보창 */
+        /* [1] 상단 정보창 (고정 높이) */
         header {
-            height: 50px; background: var(--panel); padding: 0 15px;
+            height: 45px; background: var(--panel); padding: 0 15px;
             border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;
             flex-shrink: 0;
         }
         .seed-info { font-size: 11px; color: #888; }
         .seed-val { font-size: 14px; font-weight: bold; color: #fff; margin-left: 5px;}
         .pnl-rate { font-size: 12px; font-weight: bold; margin-left: 5px; }
-        .live-price { font-size: 18px; font-weight: 800; color: var(--green); }
+        .live-price { font-size: 16px; font-weight: 800; color: var(--green); }
 
-        /* 2. 시스템 버튼 존 */
+        /* [2] 시스템 버튼 존 (고정 높이) */
         .system-zone {
             height: 45px; background: #0a0a0a; border-bottom: 1px solid #333;
-            display: flex; gap: 10px; padding: 5px 15px; align-items: center;
+            display: flex; gap: 8px; padding: 5px 15px; align-items: center;
+            flex-shrink: 0;
         }
         .sys-btn {
-            flex: 1; height: 32px; border-radius: 8px; border: 1px solid #333;
+            flex: 1; height: 32px; border-radius: 6px; border: 1px solid #333;
             font-weight: bold; font-size: 12px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
             transition: 0.2s; color: #fff; background: #1a1a1a;
         }
-        #btn-auto.auto-on { background: linear-gradient(90deg, #ff9800, #ff5722); border: none; animation: pulse 1.5s infinite; }
+        
+        #btn-auto.auto-on { background: linear-gradient(90deg, #ff9800, #ff5722); border: none; box-shadow: 0 0 10px rgba(255,87,34,0.4); animation: pulse 1.5s infinite; }
         #btn-wallet:active { background: #333; }
 
-        /* 3. 개코원숭이 존 */
+        /* [3] 개코원숭이 존 (고정 높이) */
         #baboon-zone {
-            height: 80px; background: #0a0a0a; 
+            height: 75px; background: #0a0a0a; 
             display: flex; justify-content: space-around; align-items: flex-end;
             padding-bottom: 5px; border-bottom: 1px solid #333;
             flex-shrink: 0; position: relative;
         }
         .baboon-wrapper { position: relative; width: 25%; text-align: center; }
-        .baboon-face { font-size: 30px; transition: transform 0.1s; cursor: pointer; }
+        .baboon-face { font-size: 28px; transition: transform 0.1s; cursor: pointer; }
         .baboon-label { font-size: 9px; color: #666; font-weight: bold; margin-top: 2px; }
         
         .speech-bubble {
-            position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%) scale(0);
-            background: #fff; color: #000; padding: 4px 8px; border-radius: 8px; 
-            font-size: 11px; font-weight: bold; white-space: nowrap; opacity: 0; transition: 0.2s;
-            border: 2px solid #000; z-index: 50; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%) scale(0);
+            background: #fff; color: #000; padding: 3px 6px; border-radius: 6px; 
+            font-size: 10px; font-weight: bold; white-space: nowrap; opacity: 0; transition: 0.2s;
+            border: 2px solid #000; z-index: 50; box-shadow: 0 2px 5px rgba(0,0,0,0.5); pointer-events: none;
         }
-        .speech-bubble::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); border-width: 4px; border-style: solid; border-color: #fff transparent transparent transparent; }
+        .speech-bubble::after {
+            content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%);
+            border-width: 4px; border-style: solid; border-color: #fff transparent transparent transparent;
+        }
         .speaking { transform: translateX(-50%) scale(1); opacity: 1; }
         .shake { animation: shake 0.3s infinite; }
 
-        /* 4. 차트 */
-        #tv_chart_container { flex: 1; width: 100%; background: #000; }
+        /* [4] 차트 (남는 공간 전부 차지) */
+        #tv_chart_container { flex: 1; width: 100%; background: #000; min-height: 0; }
 
-        /* 5. 채팅방 */
+        /* [5] 채팅방 (고정 높이) */
         .chat-room {
-            height: 25%; background: #080808; 
+            height: 140px; background: #080808; 
             padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
             border-top: 1px solid #333; flex-shrink: 0;
         }
         .msg { display: flex; align-items: flex-end; gap: 8px; animation: slideIn 0.2s; }
-        .avatar { font-size: 20px; min-width: 25px; text-align: center; cursor: pointer; } /* 클릭 가능 표시 */
-        .avatar:active { transform: scale(0.9); }
+        .avatar { font-size: 18px; min-width: 20px; text-align: center; }
         .bubble { 
-            padding: 8px 12px; border-radius: 12px; font-size: 12px; max-width: 90%;
+            padding: 6px 10px; border-radius: 10px; font-size: 12px; max-width: 85%;
             font-weight: 500; border: 1px solid rgba(255,255,255,0.05); line-height: 1.4;
         }
         .dog { flex-direction: row-reverse; } .dog .bubble { background: var(--dog-bg); color: var(--dog-txt); }
         .cat { flex-direction: row; } .cat .bubble { background: var(--cat-bg); color: var(--cat-txt); }
         .mouse { justify-content: center; } .mouse .bubble { background: var(--mouse-bg); color: var(--mouse-txt); font-size: 11px; }
-        
-        .sys-msg { text-align: center; color: #888; font-size: 11px; margin: 5px 0; border: 1px dashed #333; padding: 2px; border-radius: 4px; }
 
-        /* 6. 컨트롤 버튼 */
+        /* [6] 수동 컨트롤 버튼 (하단 고정) */
         .controls {
-            height: 70px; background: var(--panel); padding: 5px;
+            height: 60px; background: var(--panel); padding: 5px;
             display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px;
             border-top: 1px solid #333; flex-shrink: 0;
+            /* 아이폰 하단 바 대응 */
+            padding-bottom: max(5px, env(safe-area-inset-bottom));
         }
         .btn {
             border: none; border-radius: 6px; font-weight: 800; font-size: 11px; 
@@ -108,13 +117,14 @@
             align-items: center; justify-content: center; transition: 0.1s;
         }
         .btn:active { transform: scale(0.95); }
+        
         .btn-l-buy { background: #1B5E20; border: 1px solid #00E676; }
         .btn-l-sell { background: #004D40; border: 1px solid #00E676; opacity: 0.3; pointer-events: none;}
         .btn-s-buy { background: #B71C1C; border: 1px solid #FF1744; }
         .btn-s-sell { background: #880E4F; border: 1px solid #FF1744; opacity: 0.3; pointer-events: none;}
         .active-btn { opacity: 1 !important; pointer-events: auto !important; }
 
-        /* 7. 지갑 모달 */
+        /* [7] 지갑 팝업 (Modal) */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.8); z-index: 100; display: none;
@@ -126,10 +136,26 @@
             display: flex; flex-direction: column; overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .wallet-header { padding: 15px; background: #222; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
-        .history-list { flex: 1; overflow-y: auto; padding: 10px; }
-        .history-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #333; font-size: 13px; animation: slideIn 0.2s; }
-        .type-long { color: #00E676; } .type-short { color: #FF1744; }
+        .wallet-header {
+            padding: 15px; background: #222; border-bottom: 1px solid #333;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .wallet-title { font-size: 16px; font-weight: bold; color: #fff; display: flex; gap: 8px; align-items: center; }
+        .close-modal { background: none; border: none; color: #888; font-size: 20px; cursor: pointer; }
+        
+        .history-list {
+            flex: 1; overflow-y: auto; padding: 10px;
+        }
+        .history-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px; border-bottom: 1px solid #333;
+            font-size: 13px; animation: slideIn 0.2s;
+        }
+        .h-time { font-size: 10px; color: #666; display: block; margin-bottom: 2px; }
+        .h-type { font-weight: bold; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+        .type-long { background: rgba(0, 230, 118, 0.1); color: #00E676; }
+        .type-short { background: rgba(255, 23, 68, 0.1); color: #FF1744; }
+        .h-profit { font-weight: bold; }
         .plus { color: #00E676; } .minus { color: #FF1744; }
 
         @keyframes shake { 0% { transform: rotate(0deg); } 25% { transform: rotate(10deg); } 75% { transform: rotate(-10deg); } 100% { transform: rotate(0deg); } }
@@ -153,23 +179,39 @@
             <i class="fas fa-robot"></i> <span id="auto-text">자동매매 OFF</span>
         </button>
         <button id="btn-wallet" class="sys-btn" onclick="bot.openWallet()">
-            <i class="fas fa-wallet"></i> 내 지갑
+            <i class="fas fa-wallet"></i> 내 지갑 (내역)
         </button>
     </div>
 
     <div id="baboon-zone">
-        <div class="baboon-wrapper"><div id="msg-1" class="speech-bubble"></div><div id="face-1" class="baboon-face" onclick="bot.action(1)">🐵</div><div class="baboon-label" style="color:#00E676">롱 진입</div></div>
-        <div class="baboon-wrapper"><div id="msg-2" class="speech-bubble"></div><div id="face-2" class="baboon-face" onclick="bot.action(2)">🙉</div><div class="baboon-label" style="color:#00E676">롱 정산</div></div>
-        <div class="baboon-wrapper"><div id="msg-3" class="speech-bubble"></div><div id="face-3" class="baboon-face" onclick="bot.action(3)">🙈</div><div class="baboon-label" style="color:#FF1744">숏 진입</div></div>
-        <div class="baboon-wrapper"><div id="msg-4" class="speech-bubble"></div><div id="face-4" class="baboon-face" onclick="bot.action(4)">🙊</div><div class="baboon-label" style="color:#FF1744">숏 정산</div></div>
+        <div class="baboon-wrapper">
+            <div id="msg-1" class="speech-bubble">96,500</div>
+            <div id="face-1" class="baboon-face" onclick="bot.action(1)">🐵</div>
+            <div class="baboon-label" style="color:#00E676">롱 진입</div>
+        </div>
+        <div class="baboon-wrapper">
+            <div id="msg-2" class="speech-bubble">+500</div>
+            <div id="face-2" class="baboon-face" onclick="bot.action(2)">🙉</div>
+            <div class="baboon-label" style="color:#00E676">롱 정산</div>
+        </div>
+        <div class="baboon-wrapper">
+            <div id="msg-3" class="speech-bubble">96,500</div>
+            <div id="face-3" class="baboon-face" onclick="bot.action(3)">🙈</div>
+            <div class="baboon-label" style="color:#FF1744">숏 진입</div>
+        </div>
+        <div class="baboon-wrapper">
+            <div id="msg-4" class="speech-bubble">+500</div>
+            <div id="face-4" class="baboon-face" onclick="bot.action(4)">🙊</div>
+            <div class="baboon-label" style="color:#FF1744">숏 정산</div>
+        </div>
     </div>
 
     <div id="tv_chart_container"></div>
 
     <div class="chat-room" id="chat-box">
         <div class="msg mouse">
-            <div class="avatar" onclick="bot.toggleChatter()">🐭</div>
-            <div class="bubble">찍! 시끄러우면 내 얼굴을 눌러라 찍! 조용히 하겠다 찍! 🔇</div>
+            <div class="avatar">🐭</div>
+            <div class="bubble">찍! 화면 안 잘리게 공사 다 했다 찍! 이제 쾌적하다 찍! 🛠️</div>
         </div>
     </div>
 
@@ -183,10 +225,14 @@
     <div id="wallet-modal" class="modal-overlay">
         <div class="wallet-card">
             <div class="wallet-header">
-                <div class="wallet-title" style="color:white; font-weight:bold;"><i class="fas fa-receipt"></i> 거래 내역</div>
-                <button style="background:none; border:none; color:#fff; font-size:18px;" onclick="bot.closeWallet()">✕</button>
+                <div class="wallet-title">
+                    <i class="fas fa-receipt"></i> 거래 내역 (장부)
+                </div>
+                <button class="close-modal" onclick="bot.closeWallet()">✕</button>
             </div>
-            <div id="history-list" class="history-list"></div>
+            <div id="history-list" class="history-list">
+                <div style="text-align:center; color:#555; padding:20px;">아직 거래 내역이 없습니다.</div>
+            </div>
         </div>
     </div>
 
@@ -204,173 +250,104 @@
                 this.balance = 10000;
                 this.position = null; 
                 this.price = 0;
-                this.lastPrice = 0;
                 this.isAuto = false;
+                this.autoTimer = null;
                 this.history = [];
-                this.isChatting = true; // 대화 켜짐 상태
                 
-                // AI 단어장 (Vocabulary)
-                this.vocab = {
-                    dog: {
-                        intro: ["와우!", "주인님!", "세상에!", "저기요!", "멍멍!", "꼬리 살랑!", "헥헥!", "킁킁!", "신난다!"],
-                        market_up: ["차트가 승천해요", "양봉이 솟구쳐요", "돈 복사기 가동됐어요", "지금 롱 안사면 바보래요", "우주 끝까지 가요"],
-                        market_down: ["조정일 뿐이에요", "세일 기간이에요", "겁먹지 마세요", "건강한 조정이에요", "줍줍 찬스에요"],
-                        my_win: ["간식비 벌었어요!", "소고기 사주세요!", "산책 갈까요?", "부자 됐어요!", "제 덕분이에요!"],
-                        my_lose: ["조금만 기다려요...", "존버는 승리해요...", "손절은 안돼요...", "뼈다귀 하나만 주세요...", "주인님 믿어요..."],
-                        end: ["가즈아!", "풀매수!", "화이팅!", "사랑해요!", "충성!", "멍!"]
-                    },
-                    cat: {
-                        intro: ["하...", "야옹.", "비켜봐.", "쯧쯧.", "한심하군.", "집사야.", "어휴.", "시끄럽다냥."],
-                        market_up: ["개미 꼬시기다냥", "곧 설거지 나온다냥", "돔황쳐라냥", "가짜 반등이다냥", "거래량이 수상하다냥"],
-                        market_down: ["나락 간다냥", "지옥문 열렸다냥", "한강 물 체크해라냥", "시원하게 떨어진다냥", "숏이 진리다냥"],
-                        my_win: ["운이 좋았다냥", "츄르값은 벌었다냥", "내가 뭐랬냐냥", "이게 실력이다냥", "감사히 여겨라냥"],
-                        my_lose: ["내 돈 어디갔냥", "집사가 망쳤다냥", "밥 굶게 생겼다냥", "청산 당하고 싶냥", "짜증난다냥"],
-                        end: ["정신차려라냥.", "두고보라냥.", "잠이나 자라냥.", "한심하다냥.", "공부 좀 해라냥."]
-                    },
-                    mouse: {
-                        intro: ["찍!", "으악!", "형님들!", "저기...", "살려줘요!", "히익!", "두리번...", "큰일났다!"],
-                        market_up: ["너무 높아요 찍", "고소공포증 있다 찍", "떨어질거 같다 찍", "빨리 팔자 찍", "욕심 부리지마 찍"],
-                        market_down: ["바닥이 없다 찍", "고래 형님들 싸운다 찍", "치즈 다 녹는다 찍", "지구 멸망이다 찍", "다 죽는다 찍"],
-                        my_win: ["치즈 한조각 건졌다 찍", "1불이라도 챙기자 찍", "도망치자 찍", "감사합니다 찍", "심장이 뛴다 찍"],
-                        my_lose: ["내 전재산이다 찍", "고양이한테 잡아먹힌다 찍", "살려주세요 찍", "다신 안할거다 찍", "손이 떨린다 찍"],
-                        end: ["숨어야지 찍...", "구멍으로 쏙...", "무서워 찍...", "집에 갈래 찍...", "기도하자 찍..."]
-                    }
-                };
-
                 this.fetchPrice();
-                setInterval(() => this.fetchPrice(), 1000);
-                
-                // 🗣️ AI 수다 엔진 가동 (0.8초마다)
-                setInterval(() => this.generateSentence(), 800);
+                // [수정됨] 가격 갱신 주기를 0.5초로 단축 (차트 오차 최소화)
+                setInterval(() => this.fetchPrice(), 500);
+                setInterval(() => this.randomChatter(), 2000);
             }
 
             async fetchPrice() {
                 try {
                     const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
                     const data = await res.json();
-                    this.lastPrice = this.price;
                     this.price = parseFloat(data.price);
                     this.updateHeader();
                 } catch(e) {}
             }
 
-            // ============================================
-            // 🔇 대화 정지/시작 토글
-            // ============================================
-            toggleChatter() {
-                this.isChatting = !this.isChatting;
-                const box = document.getElementById('chat-box');
-                const div = document.createElement('div');
-                div.className = 'sys-msg';
-                
-                if(!this.isChatting) {
-                    div.innerText = "🔇 동물들이 조용해졌습니다. (클릭하여 켜기)";
-                } else {
-                    div.innerText = "🔊 동물들이 다시 떠들기 시작합니다!";
-                }
-                
-                box.appendChild(div);
-                box.scrollTop = box.scrollHeight;
-            }
-
-            // ============================================
-            // 🧠 AI 문장 생성기
-            // ============================================
-            generateSentence() {
-                if(!this.isChatting) return; // 대화 꺼져있으면 중단
-
-                // 1. 화자 랜덤 선택
-                const animals = ['dog', 'cat', 'mouse'];
-                const who = animals[Math.floor(Math.random() * animals.length)];
-                
-                // 2. 현재 상태 분석
-                let sentiment = 'neutral';
-                const pnl = this.position ? ((this.price - this.position.entry) / this.position.entry * (this.position.type==='LONG'?1:-1)) : 0;
-                
-                // 3. 단어장 선택
-                const dict = this.vocab[who];
-                let parts = [];
-
-                parts.push(this.pick(dict.intro));
-
-                if(this.position && Math.random() > 0.4) {
-                    if(pnl > 0) parts.push(this.pick(dict.my_win));
-                    else parts.push(this.pick(dict.my_lose));
-                } else {
-                    if(this.price > this.lastPrice) parts.push(this.pick(dict.market_up));
-                    else parts.push(this.pick(dict.market_down));
-                }
-
-                parts.push(this.pick(dict.end));
-
-                const fullSentence = parts.join(" ");
-                this.talk(who, fullSentence);
-            }
-
-            pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
-            // 채팅 UI 출력 (클릭 이벤트 추가됨)
-            talk(who, text) {
-                const div = document.createElement('div');
-                div.className = `msg ${who}`;
-                const avatar = who==='dog' ? '🐶' : (who==='cat'?'🐱':'🐭');
-                
-                // [중요] 아바타에 클릭 이벤트 추가
-                div.innerHTML = `<div class="avatar" onclick="bot.toggleChatter()">${avatar}</div><div class="bubble">${text}</div>`;
-                
-                const box = document.getElementById('chat-box');
-                box.appendChild(div);
-                box.scrollTop = box.scrollHeight;
-                if(box.children.length > 50) box.removeChild(box.firstChild);
-            }
-
-            // ============================================
-            // 🤖 자동매매 & 지갑 & 버튼 액션
-            // ============================================
             toggleAuto() {
                 this.isAuto = !this.isAuto;
                 const btn = document.getElementById('btn-auto');
                 const txt = document.getElementById('auto-text');
-                
-                if(this.isAuto) {
+
+                if (this.isAuto) {
                     btn.classList.add('auto-on');
                     txt.innerText = "자동매매 ON";
-                    this.talk('dog', "제가 알아서 돈 벌어올게요!");
-                    this.autoTimer = setInterval(() => {
-                        if(Math.random() > 0.7) {
-                            if(this.position) this.action(this.position.type === 'LONG' ? 2 : 4);
-                            else this.action(Math.random() > 0.5 ? 1 : 3);
-                        }
-                    }, 2000);
+                    this.talk('dog', "멍! 제가 알아서 매매할게요! 주인님은 쉬세요!");
+                    this.talk('mouse', "찍! AI 알고리즘 가동한다 찍! 🧠");
+                    this.autoTimer = setInterval(() => this.autoTradeLogic(), 3000);
                 } else {
                     btn.classList.remove('auto-on');
                     txt.innerText = "자동매매 OFF";
-                    this.talk('cat', "흥, 결국 수동이냐옹.");
+                    this.talk('cat', "흥. 결국 수동으로 하겠다냥? 못미덥다냥.");
                     clearInterval(this.autoTimer);
+                }
+            }
+
+            autoTradeLogic() {
+                if(this.price === 0) return;
+                const r = Math.random();
+                if (this.position) {
+                    if (r > 0.7) { 
+                        const actionId = this.position.type === 'LONG' ? 2 : 4;
+                        this.action(actionId);
+                    }
+                } else {
+                    if (r > 0.6) { 
+                        const type = Math.random() > 0.5 ? 1 : 3;
+                        this.action(type);
+                    }
                 }
             }
 
             openWallet() {
                 document.getElementById('wallet-modal').style.display = 'flex';
                 this.renderHistory();
+                this.talk('mouse', "찍! 장부 가져왔다 찍! 꼼꼼히 봐라 찍!");
             }
-            closeWallet() { document.getElementById('wallet-modal').style.display = 'none'; }
+
+            closeWallet() {
+                document.getElementById('wallet-modal').style.display = 'none';
+            }
 
             addHistory(type, price, profit) {
                 const now = new Date();
                 const timeStr = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
-                this.history.unshift({ time: timeStr, type, price, profit });
+                
+                this.history.unshift({
+                    time: timeStr,
+                    type: type,
+                    price: price,
+                    profit: profit
+                });
             }
 
             renderHistory() {
                 const list = document.getElementById('history-list');
-                if(this.history.length === 0) { list.innerHTML = "<div style='text-align:center; color:#555; padding:20px;'>거래 내역 없음</div>"; return; }
+                if(this.history.length === 0) {
+                    list.innerHTML = "<div style='text-align:center; color:#555; padding:20px;'>아직 거래 내역이 없습니다.</div>";
+                    return;
+                }
+
                 let html = "";
                 this.history.forEach(h => {
-                    const profitClass = h.profit > 0 ? 'plus' : (h.profit < 0 ? 'minus' : '');
                     const typeClass = h.type.includes('LONG') ? 'type-long' : 'type-short';
+                    const profitClass = h.profit > 0 ? 'plus' : (h.profit < 0 ? 'minus' : '');
                     const profitStr = h.profit !== 0 ? (h.profit > 0 ? `+${Math.floor(h.profit)}` : Math.floor(h.profit)) : '-';
-                    html += `<div class="history-item"><div><span style="color:#666; font-size:10px;">${h.time}</span> <span class="${typeClass}" style="font-weight:bold;">${h.type}</span></div><div class="${profitClass}">${profitStr} $</div></div>`;
+                    
+                    html += `
+                    <div class="history-item">
+                        <div>
+                            <span class="h-time">${h.time}</span>
+                            <span class="h-type ${typeClass}">${h.type}</span>
+                            <span style="margin-left:5px;">@${h.price.toLocaleString()}</span>
+                        </div>
+                        <div class="h-profit ${profitClass}">${profitStr} $</div>
+                    </div>`;
                 });
                 list.innerHTML = html;
             }
@@ -378,22 +355,28 @@
             action(id) {
                 if(this.price === 0) return;
 
-                if(id === 1 && !this.position) {
+                if(id === 1) { 
+                    if(this.position) return;
                     this.position = { type: 'LONG', entry: this.price, amount: this.balance };
                     this.shout(1, this.price.toLocaleString());
                     this.toggleBtns(true, 'LONG');
                     this.addHistory('LONG 진입', this.price, 0);
+                    if(!this.isAuto) this.talk('dog', "멍! 롱 잡았다!");
                 }
-                else if(id === 2 && this.position) {
+                else if(id === 2) { 
+                    if(!this.position) return;
                     this.closePosition(2);
                 }
-                else if(id === 3 && !this.position) {
+                else if(id === 3) { 
+                    if(this.position) return;
                     this.position = { type: 'SHORT', entry: this.price, amount: this.balance };
                     this.shout(3, this.price.toLocaleString());
                     this.toggleBtns(true, 'SHORT');
                     this.addHistory('SHORT 진입', this.price, 0);
+                    if(!this.isAuto) this.talk('cat', "숏 쳤다냥!");
                 }
-                else if(id === 4 && this.position) {
+                else if(id === 4) { 
+                    if(!this.position) return;
                     this.closePosition(4);
                 }
             }
@@ -402,16 +385,20 @@
                 const diff = (this.price - this.position.entry) / this.position.entry;
                 const pnlRate = this.position.type === 'LONG' ? diff : -diff;
                 const profit = this.position.amount * pnlRate;
-                this.balance += profit;
                 
+                this.balance += profit;
                 const sign = profit > 0 ? "+" : "";
                 this.shout(baboonId, `${sign}${Math.floor(profit)}`); 
+
                 this.addHistory(`${this.position.type} 청산`, this.price, profit);
-                
+
                 this.position = null;
                 this.toggleBtns(false);
                 this.updateHeader();
-                if(document.getElementById('wallet-modal').style.display === 'flex') this.renderHistory();
+                
+                if(document.getElementById('wallet-modal').style.display === 'flex') {
+                    this.renderHistory();
+                }
             }
 
             shout(id, text) {
@@ -423,13 +410,32 @@
                 setTimeout(() => { bubble.classList.remove('speaking'); face.classList.remove('shake'); }, 2000);
             }
 
+            talk(who, text) {
+                const div = document.createElement('div');
+                div.className = `msg ${who}`;
+                const avatar = who==='dog' ? '🐶' : (who==='cat'?'🐱':'🐭');
+                div.innerHTML = `<div class="avatar">${avatar}</div><div class="bubble">${text}</div>`;
+                const box = document.getElementById('chat-box');
+                box.appendChild(div);
+                box.scrollTop = box.scrollHeight;
+                if(box.children.length > 50) box.removeChild(box.firstChild);
+            }
+
             toggleBtns(hasPos, type) {
-                const b1 = document.getElementById('btn-1'); const b2 = document.getElementById('btn-2');
-                const b3 = document.getElementById('btn-3'); const b4 = document.getElementById('btn-4');
+                const b1 = document.getElementById('btn-1');
+                const b2 = document.getElementById('btn-2');
+                const b3 = document.getElementById('btn-3');
+                const b4 = document.getElementById('btn-4');
+
                 b1.classList.remove('active-btn'); b2.classList.remove('active-btn');
                 b3.classList.remove('active-btn'); b4.classList.remove('active-btn');
-                if(!hasPos) { b1.classList.add('active-btn'); b3.classList.add('active-btn'); }
-                else { if(type === 'LONG') b2.classList.add('active-btn'); else b4.classList.add('active-btn'); }
+
+                if(!hasPos) {
+                    b1.classList.add('active-btn'); b3.classList.add('active-btn');
+                } else {
+                    if(type === 'LONG') b2.classList.add('active-btn');
+                    else b4.classList.add('active-btn');
+                }
             }
 
             updateHeader() {
@@ -448,6 +454,17 @@
                 if(totalPnl > 0) elRate.style.color = '#00E676';
                 else if(totalPnl < 0) elRate.style.color = '#FF1744';
                 else elRate.style.color = '#888';
+            }
+
+            randomChatter() {
+                const animals = ['dog', 'cat', 'mouse'];
+                const who = animals[Math.floor(Math.random() * animals.length)];
+                const texts = {
+                    dog: ["차트가 롱이다 멍!", "산책가고 싶다...", "킁킁 돈냄새!", "양봉이 보인다 멍!"],
+                    cat: ["숏이 진리다냥", "개미 털기다냥", "졸리다냥...", "하품...", "떨어져라 얍!"],
+                    mouse: ["고래 형님 오신다 찍!", "무서워 찍...", "치즈 내놔 찍!", "눈치게임 시작 찍"]
+                };
+                if(Math.random() > 0.6) this.talk(who, texts[who][Math.floor(Math.random() * texts[who].length)]);
             }
         }
 
