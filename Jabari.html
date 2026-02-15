@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>주군의 AI AUTO (Java Connected)</title>
+    <title>주군의 AI AUTO (Web Cloud)</title>
     <style>
         /* [스타일] 유니버설 뷰포트 & 다크 테마 */
         html { background-color: #000; height: 100%; }
@@ -147,7 +147,7 @@
 
     <div class="terminal-box">
         <div class="terminal-header">
-            <span class="header-title">TACTICAL MAP (ONLINE)</span>
+            <span class="header-title">TACTICAL MAP (WEB CLOUD)</span>
             <span id="ai-activity-text" class="ai-status-text"></span>
         </div>
         <div id="slot-container" class="slot-container">
@@ -216,7 +216,7 @@
         </button>
     </div>
 
-    <div class="log-box" id="sys-log">> SYSTEM READY. WAITING FOR JAVA ENGINE...</div>
+    <div class="log-box" id="sys-log">> WEB-NATIVE SYSTEM READY. GITHUB HOSTING OPTIMIZED.</div>
 
 <script>
     let cash = 10000; 
@@ -225,133 +225,247 @@
     let isAuto = false;
     let isDCA = false;
     let wakeLock = null;
-    let serverConnected = false;
+    
+    // [중요] 50개 코인 초기 시세 가상 설정 (서버 없이 돌아가기 위함)
+    const coins = ["BTC","ETH","SOL","BNB","XRP","ZRX","ONDO","SUI","ADA","AVAX","DOT","TRX","MATIC","LINK","ATOM","NEAR","APT","ARB","OP","STX","RNDR","FET","WLD","TAO","INJ","JASMY","GALA","SAND","UNI","AAVE","MKR","SNX","LTC","BCH","ETC","EOS","XLM","ALGO","DOGE","SHIB","PEPE","WIF","FLOKI","BONK","BOME","MEME"];
+    
+    // 초기화: 랜덤 가격 생성
+    coins.forEach(c => {
+        let base = 100;
+        if(c==='BTC') base=65000; if(c==='ETH') base=3500; if(c==='SOL') base=150;
+        prices[c] = base + (Math.random()*10); 
+    });
 
-    // [중요] 자바 엔진(스프링 부트) 주소
-    const SERVER_URL = "http://localhost:8080/api";
+    const MAX_TOTAL_SLOTS = 20;  
+    const MAX_MANUAL_SLOTS = 10; 
 
-    // ------------------------------------------------------------
-    // [핵심] 자바 서버와 통신 (Bridge)
-    // ------------------------------------------------------------
-    async function communicateWithJava() {
-        try {
-            // 1. 자바 서버에 데이터 요청 (Scan)
-            const res = await fetch(`${SERVER_URL}/scan`);
-            const data = await res.json();
+    // [핵심] 가상 서버 엔진 (Virtual Java Engine)
+    // 깃허브에서 돌아갈 때 실제 서버 역할을 대신 수행합니다.
+    async function virtualServerEngine() {
+        // 1. 시세 변동 시뮬레이션 (랜덤 워크)
+        coins.forEach(sym => {
+            const volatility = 0.005; // 변동성
+            const change = 1 + (Math.random() - 0.5) * volatility;
+            prices[sym] = prices[sym] * change;
+        });
+
+        // 2. AI 판단 로직 (내장형)
+        const activity = document.getElementById('ai-activity-text');
+        
+        if (isAuto) {
+            // 랜덤하게 타겟 선정 및 RSI 계산 흉내
+            const target = coins[Math.floor(Math.random() * coins.length)];
+            const mockRSI = Math.floor(Math.random() * 100);
             
-            // 2. 연결 성공 시 UI 업데이트
-            if(!serverConnected) {
-                serverConnected = true;
-                addLog("시스템", "트레이딩 마술사(Java) 연결 성공!", "var(--up)");
-                const title = document.querySelector('.header-title');
-                title.innerText = "TACTICAL MAP (ONLINE)";
-                title.style.color = "var(--up)";
-                document.getElementById('top-ai-badge').style.borderColor = "var(--up)";
-            }
+            activity.innerText = `AI 분석중: ${target} (RSI: ${mockRSI})`;
 
-            // 3. 가격 데이터 동기화
-            const sym = data.symbol;
-            prices[sym] = data.price;
-            
-            // 4. AI 신호 감지 및 실행
-            const activity = document.getElementById('ai-activity-text');
-            if (isAuto) {
-                activity.innerText = `자바 AI 분석중: ${sym} (RSI: ${data.rsi})`;
-                
-                if (data.signal === "BUY") {
-                    // 이미 보유중이 아니고, 슬롯 여유가 있으면 진입
-                    if (!portfolio[sym] && Object.keys(portfolio).length < 20) {
-                        // AI 모드에 따른 진입 전략
-                        const mode = document.getElementById('ai-mode-select').value;
-                        let lev = 1; let market = "SPOT";
-                        
-                        if(mode === "AGGRESSIVE") { lev = 20; market = "FUT"; }
-                        else if(mode === "MODERATE") { lev = 5; market = "FUT"; }
-                        
-                        executeEntry(sym, 1000, market, "LONG", lev, true, `(AI RSI: ${data.rsi})`);
+            // 매수 신호 발생 (RSI < 30)
+            if (mockRSI < 30) {
+                if (!portfolio[target] && Object.keys(portfolio).length < 20) {
+                    const mode = document.getElementById('ai-mode-select').value;
+                    let lev = 1; let market = "SPOT";
+                    if(mode === "AGGRESSIVE") { lev = 20; market = "FUT"; }
+                    else if(mode === "MODERATE") { lev = 5; market = "FUT"; }
+                    
+                    // 30% 확률로 진입 (빈번한 매매 방지)
+                    if(Math.random() > 0.7) {
+                        executeEntry(target, 1000, market, "LONG", lev, true, `(WebAI RSI:${mockRSI})`);
                     }
                 }
-            } else {
-                activity.innerText = "대기중...";
             }
-
-            checkLiquidation();
-            updateDashboard();
-
-        } catch (e) {
-            // 연결 실패 시
-            if(serverConnected) {
-                serverConnected = false;
-                addLog("경고", "엔진 연결 끊김.. 재접속 시도", "var(--danger)");
-                const title = document.querySelector('.header-title');
-                title.innerText = "TACTICAL MAP (OFFLINE)";
-                title.style.color = "var(--danger)";
-            }
-            // 비상용 시뮬레이션 데이터 가동 (화면 멈춤 방지)
-            runSimulationFallback();
+        } else if (isDCA) {
+            activity.innerText = "DCA 감시중...";
+        } else {
+            activity.innerText = "대기중...";
         }
-    }
 
-    function runSimulationFallback() {
-        // 서버 연결 안될 때 UI 테스트용 가짜 데이터
-        const coins = ["BTC","ETH","SOL","XRP"];
-        const sym = coins[Math.floor(Math.random()*coins.length)];
-        if(!prices[sym]) prices[sym] = 1000;
-        prices[sym] = prices[sym] * (1 + (Math.random() - 0.5) * 0.01);
+        // 3. DCA 로직
+        if (isDCA) {
+            const gap = parseFloat(document.getElementById('dca-gap').value);
+            const mult = parseFloat(document.getElementById('dca-mult').value);
+            for (let sym in portfolio) {
+                const d = portfolio[sym];
+                const p = prices[sym];
+                
+                const positionSize = d.margin * d.lev;
+                const coinSize = positionSize / d.avg;
+                let pnl = d.side === "LONG" ? (p - d.avg) * coinSize : (d.avg - p) * coinSize;
+                const roe = (pnl / d.margin) * 100;
+
+                if (roe <= gap && Math.random() > 0.98) {
+                    const addAmount = 1000 * mult;
+                    if (cash >= addAmount) executeEntry(sym, addAmount, d.market, d.side, d.lev, true, `(DCA)`);
+                }
+            }
+        }
+
+        // 4. 익절/손절 로직
+        if (isAuto) {
+            Object.keys(portfolio).forEach(sym => {
+                const d = portfolio[sym];
+                const p = prices[sym];
+                const coinSize = (d.margin * d.lev) / d.avg;
+                let pnl = d.side === "LONG" ? (p - d.avg) * coinSize : (d.avg - p) * coinSize;
+                const roe = (pnl / d.margin) * 100;
+                
+                let targetProfit = 5.0;
+                const mode = document.getElementById('ai-mode-select').value;
+                if (mode === "AGGRESSIVE") targetProfit = 15.0;
+                
+                if (roe >= targetProfit || roe <= -10.0) { closePosition(sym); }
+            });
+        }
+
+        checkLiquidation();
         updateDashboard();
     }
 
-    // [주문 전송] 수동 매수 시 자바 서버로 명령 하달
-    async function sendOrderToServer(symbol, amount, side) {
-        if (!serverConnected) return;
-        try {
-            await fetch(`${SERVER_URL}/order`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ symbol, amount, side })
-            });
-            // addLog("시스템", "서버로 주문 전송 완료", "#aaa");
-        } catch (e) { console.error("주문 전송 실패"); }
-    }
-
     // ------------------------------------------------------------
-    // [기존 전술 로직] (UI 제어 및 계산)
+    // [UI 및 시스템 로직]
     // ------------------------------------------------------------
     
+    async function toggleWakeLock() {
+        const btn = document.getElementById('wake-lock-btn');
+        if ('wakeLock' in navigator) {
+            if (wakeLock === null) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    btn.classList.add('active');
+                    btn.innerHTML = "<span>⚡ 화면 유지 중 (켜짐)</span>";
+                    addLog("시스템", "화면 꺼짐 방지 활성화", "var(--gold)");
+                } catch (err) { addLog("오류", "Wake Lock 실패", "var(--down)"); }
+            } else {
+                wakeLock.release(); wakeLock = null;
+                btn.classList.remove('active');
+                btn.innerHTML = "<span>⚡ 화면 꺼짐 방지 (No Sleep)</span>";
+                addLog("시스템", "화면 유지 해제", "#888");
+            }
+        } else { alert("이 브라우저는 지원하지 않습니다."); }
+    }
+
+    function selectActiveCoin(symbol, market) {
+        document.getElementById('coin-select').value = symbol;
+        document.getElementById('market-select').value = market;
+        handleMarketChange();
+        const cp = document.getElementById('control-panel');
+        cp.style.borderColor = 'var(--gold)';
+        setTimeout(() => { cp.style.borderColor = '#2b3139'; }, 300);
+    }
+
+    function handleMarketChange() {
+        const market = document.getElementById('market-select').value;
+        const lev = document.getElementById('lev-select');
+        const sBtn = document.getElementById('short-btn');
+        if (market === "SPOT") {
+            lev.value = "1"; lev.disabled = true; sBtn.disabled = true; sBtn.style.opacity = "0.3";
+        } else {
+            lev.disabled = false; if(lev.value === "1") lev.value = "10"; sBtn.disabled = false; sBtn.style.opacity = "1";
+        }
+    }
+
+    function updateAIModeColor() {
+        const mode = document.getElementById('ai-mode-select').value;
+        const btn = document.getElementById('auto-btn');
+        btn.classList.remove('stable', 'moderate', 'aggressive');
+        if (isAuto) {
+            if (mode === 'STABLE') btn.classList.add('stable');
+            else if (mode === 'MODERATE') btn.classList.add('moderate');
+            else if (mode === 'AGGRESSIVE') btn.classList.add('aggressive');
+        }
+    }
+
+    function toggleAuto() {
+        isAuto = !isAuto;
+        const btn = document.getElementById('auto-btn');
+        const topBadge = document.getElementById('top-ai-badge');
+        const topText = document.getElementById('top-ai-text');
+        updateAIModeColor();
+        if(isAuto) {
+            btn.innerText = "AI RUNNING...";
+            topBadge.className = "top-ai-badge on"; topText.innerText = "SYSTEM ON";
+            addLog("시스템", "AI 가상 엔진 가동", "var(--up)");
+            if(wakeLock === null) toggleWakeLock();
+        } else {
+            btn.innerText = "🤖 AI START";
+            btn.classList.remove('stable', 'moderate', 'aggressive');
+            topBadge.className = "top-ai-badge"; topText.innerText = "SYSTEM OFF";
+            addLog("시스템", "AI 엔진 정지", "#888");
+        }
+    }
+
+    function toggleDCA() {
+        isDCA = !isDCA;
+        const btn = document.getElementById('dca-btn');
+        if(isDCA) { 
+            btn.innerText = "ON (감시중)"; 
+            btn.classList.add('btn-dca-on'); 
+            addLog("시스템", "스마트 DCA 가동", "var(--up)"); 
+        } 
+        else { 
+            btn.innerText = "OFF"; 
+            btn.classList.remove('btn-dca-on'); 
+            addLog("시스템", "스마트 DCA 정지", "#888"); 
+        }
+    }
+
     function executeEntry(symbol, marginUSD, market, side, lev, isAutoTrade, reason="") {
-        if (!prices[symbol] && !serverConnected) return;
-        const price = prices[symbol] || 100;
-
-        // 수동 주문이면 서버로 전송
-        if (!isAutoTrade) sendOrderToServer(symbol, marginUSD, side);
-
+        const price = prices[symbol];
+        
         if (portfolio[symbol]) {
-            // 정밀 추매 계산
             const oldSize = portfolio[symbol].margin * portfolio[symbol].lev;
             const newSize = marginUSD * lev;
             const oldQty = oldSize / portfolio[symbol].avg;
             const newQty = newSize / price;
-            
             portfolio[symbol].avg = (oldSize + newSize) / (oldQty + newQty);
             portfolio[symbol].margin += marginUSD;
             addLog(isAutoTrade ? "[AI] 추매" : "[수동] 추매", `${symbol} ${reason} (+$${Math.floor(marginUSD)})`, "var(--gold)");
         } 
         else {
-            if (Object.keys(portfolio).length >= 20) return;
-            portfolio[symbol] = { avg: price, margin: marginUSD, market: market, side: side, lev: lev, isAuto: isAutoTrade };
-            
-            let badge = isAutoTrade ? "[AI]" : "[수동]";
-            if(isAutoTrade) {
-                const mode = document.getElementById('ai-mode-select').value;
-                if(mode === 'STABLE') badge = "[안정AI]";
-                if(mode === 'AGGRESSIVE') badge = "[공격AI]";
+            const currentTotal = Object.keys(portfolio).length;
+            if (isAutoTrade) { if (currentTotal >= MAX_TOTAL_SLOTS) return; } 
+            else {
+                let manualCount = 0;
+                for(let k in portfolio) { if(!portfolio[k].isAuto) manualCount++; }
+                if (manualCount >= MAX_MANUAL_SLOTS) { alert(`⛔ 수동 제한(${MAX_MANUAL_SLOTS}개) 도달!`); return; }
+                if (currentTotal >= MAX_TOTAL_SLOTS) { alert("⛔ 전체 슬롯 가득 참!"); return; }
             }
-            addLog(badge, `${symbol} ${side} x${lev} 진입`, side==="LONG"?"var(--up)":"var(--down)");
+            portfolio[symbol] = { avg: price, margin: marginUSD, market: market, side: side, lev: lev, isAuto: isAutoTrade };
+            let badge = isAutoTrade ? "[AI]" : "[수동]";
+            let color = side==="LONG" ? "var(--up)" : "var(--down)";
+            addLog(badge, `${symbol} ${side} x${lev} 진입`, color);
         }
         cash -= marginUSD;
         updateDashboard();
     }
 
+    function manualEntry(side) {
+        const sym = document.getElementById('coin-select').value;
+        const market = document.getElementById('market-select').value;
+        const amt = parseFloat(document.getElementById('margin-input').value);
+        let lev = parseInt(document.getElementById('lev-select').value);
+        if(market === "SPOT") { side = "LONG"; lev = 1; }
+        executeEntry(sym, amt, market, side, lev, false);
+    }
+    
+    function getLiqPrice(d) {
+        if (d.lev === 1) return 0;
+        return d.side === "LONG" ? d.avg * (1 - (1/d.lev)) : d.avg * (1 + (1/d.lev));
+    }
+    
+    function checkLiquidation() {
+        for (let sym in portfolio) {
+            const d = portfolio[sym];
+            const p = prices[sym];
+            const liq = getLiqPrice(d);
+            if (d.lev > 1) { 
+                if ((d.side === "LONG" && p <= liq) || (d.side === "SHORT" && p >= liq)) {
+                    delete portfolio[sym];
+                    addLog("청산", `💥 ${sym} 강제 청산`, "var(--down)");
+                }
+            }
+        }
+    }
+    
     function updateDashboard() {
         const container = document.getElementById('slot-container');
         if (Object.keys(portfolio).length === 0) {
@@ -367,15 +481,14 @@
             const p = prices[sym] || d.avg;
             const liq = getLiqPrice(d);
             
-            // PnL 정밀 계산
             const positionSize = d.margin * d.lev;
             const coinSize = positionSize / d.avg;
             let pnl = d.side === "LONG" ? (p - d.avg) * coinSize : (d.avg - p) * coinSize;
+            
             const roe = (pnl / d.margin) * 100;
             totalPnL += pnl; usedMargin += d.margin;
             const currentEquity = d.margin + pnl;
 
-            // 청산 Gap 및 위험도
             let distText = ""; let dangerClass = ""; let riskIcon = "";
             if (d.lev >= 20) riskIcon = "🔥"; if (d.lev >= 50) riskIcon = "💀";
 
@@ -395,4 +508,92 @@
                 slot.innerHTML = `
                     <div class="coin-info">
                         <div class="coin-header">
-                            <span class
+                            <span class="coin-sym">${sym}</span>
+                            <span class="lev-badge">${d.market} x${d.lev}</span>
+                            <span class="side-badge ${d.side==='LONG'?'side-long':'side-short'}">${d.side}</span>
+                            ${d.isAuto ? '<span class="auto-tag">AI</span>' : ''}
+                            <span class="size-badge"></span>
+                        </div>
+                        <div class="detail-row">
+                            <span>평단: <span class="val-entry"></span></span>
+                            <span>현재: <span class="val-mark"></span></span>
+                        </div>
+                        <div class="detail-row liq-row"><span class="liq-val"></span> <span class="liq-dist"></span></div>
+                        <div class="detail-row money-row">
+                            <span class="money-label">본전: <span class="val-margin"></span></span>
+                            <span class="money-val val-cur-money"></span>
+                        </div>
+                    </div>
+                    <div class="slot-right">
+                        <span class="pnl-text"></span>
+                        <span class="pnl-val" style="font-size:11px;"></span>
+                        <button class="close-btn" onclick="event.stopPropagation(); closePosition('${sym}')">정산</button>
+                    </div>`;
+                container.appendChild(slot);
+            }
+            
+            // 데이터 업데이트
+            slot.querySelector('.size-badge').innerText = riskIcon + ' Size: $' + Math.floor(positionSize).toLocaleString();
+            slot.querySelector('.val-entry').innerText = d.avg.toLocaleString(undefined, {maximumFractionDigits:4});
+            slot.querySelector('.val-mark').innerText = p.toLocaleString(undefined, {maximumFractionDigits:4});
+            slot.querySelector('.val-margin').innerText = '$' + Math.floor(d.margin).toLocaleString();
+            
+            const curMoneyEl = slot.querySelector('.val-cur-money');
+            curMoneyEl.innerText = `잔액: $${Math.floor(currentEquity).toLocaleString()}`;
+            curMoneyEl.style.color = pnl >= 0 ? "var(--up)" : "var(--down)";
+
+            const liqValEl = slot.querySelector('.liq-val');
+            const liqDistEl = slot.querySelector('.liq-dist');
+            if (d.lev > 1) {
+                liqValEl.innerText = `청산: ${liq < 1 ? liq.toFixed(5) : liq.toLocaleString()}`;
+                liqDistEl.innerText = distText;
+                liqDistEl.className = "liq-dist " + dangerClass; 
+            } else { liqValEl.innerText = "청산 없음 (1x)"; liqDistEl.innerText = ""; }
+            
+            const pnlText = slot.querySelector('.pnl-text');
+            pnlText.innerText = (roe >= 0 ? '+' : '') + roe.toFixed(2) + '%';
+            pnlText.style.color = roe >= 0 ? "var(--up)" : "var(--down)";
+            const pnlValEl = slot.querySelector('.pnl-val');
+            pnlValEl.innerText = (pnl >= 0 ? '+' : '') + pnl.toFixed(2);
+            pnlValEl.style.color = roe >= 0 ? "var(--up)" : "var(--down)";
+
+            if (roe >= 0) { slot.classList.remove('minus'); slot.classList.add('plus'); } 
+            else { slot.classList.remove('plus'); slot.classList.add('minus'); }
+            
+            slot.classList.remove('flash-up', 'flash-down');
+            void slot.offsetWidth; 
+            if (p > prevP) slot.classList.add('flash-up'); else if (p < prevP) slot.classList.add('flash-down');
+        }
+        const existingSlots = container.querySelectorAll('.slot-item');
+        existingSlots.forEach(el => { if (!portfolio[el.id.replace('slot-', '')]) el.remove(); });
+
+        document.getElementById('total-val').innerText = (cash + usedMargin + totalPnL).toLocaleString(undefined, {minimumFractionDigits: 2});
+        document.getElementById('active-count').innerText = count;
+        document.getElementById('pnl-val').innerText = (totalPnL >= 0 ? '+' : '') + totalPnL.toFixed(2);
+        document.getElementById('pnl-val').style.color = totalPnL >= 0 ? "var(--up)" : "var(--down)";
+    }
+
+    function closePosition(symbol) {
+        if (!portfolio[symbol]) return;
+        const d = portfolio[symbol];
+        const p = prices[symbol];
+        const coinSize = (d.margin * d.lev) / d.avg;
+        let pnl = d.side === "LONG" ? (p - d.avg) * coinSize : (d.avg - p) * coinSize;
+        cash += d.margin + pnl;
+        delete portfolio[symbol];
+        addLog("정산", `${symbol} 종료`, pnl>=0?"var(--up)":"var(--down)");
+        updateDashboard();
+    }
+
+    function addLog(action, msg, color) {
+        const logBox = document.getElementById('sys-log');
+        const time = new Date().toLocaleTimeString('ko-KR', {hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        logBox.innerHTML = `<div><span style="color:#555">[${time}]</span> <span style="color:${color};font-weight:bold">${action}</span> ${msg}</div>` + logBox.innerHTML;
+    }
+
+    handleMarketChange();
+    // [중요] 가상 서버 엔진 가동 (1초 간격)
+    setInterval(virtualServerEngine, 1000); 
+</script>
+</body>
+</html>
