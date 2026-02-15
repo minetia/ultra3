@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>주군의 AI AUTO 시스템 v8.5</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --bg: #000000; --card: #161616; --up: #ff3b30; --down: #0a84ff; --gold: #ffcc00; --text: #ffffff; --input-bg: #222; }
+        body { background: var(--bg); color: var(--text); font-family: 'Pretendard', sans-serif; margin: 0; padding: 12px; padding-bottom: 80px; }
+        
+        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-card { background: var(--card); padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #333; }
+        .stat-card small { color: #888; font-size: 10px; display: block; margin-bottom: 4px; }
+        .stat-card .val { font-size: 15px; font-weight: 700; }
+        .up { color: var(--up); } .down { color: var(--down); }
+
+        .narrative-box { position: relative; width: 100%; height: 45vh; border-radius: 16px; overflow: hidden; margin-bottom: 15px; border: 1px solid #333; background: #000; }
+        #main-img { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.5s ease-in-out; filter: brightness(0.65); }
+        
+        .price-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%; z-index: 10; }
+        .price-overlay .label { font-size: 11px; color: rgba(255,255,255,0.7); letter-spacing: 2px; margin-bottom: 5px; }
+        .price-overlay .big-price { font-size: 32px; font-weight: 800; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,0.9); letter-spacing: 1px; }
+
+        .ai-watermark { position: absolute; top: 15px; right: 15px; font-size: 10px; font-weight: 900; color: #555; border: 1px solid #555; padding: 3px 8px; border-radius: 12px; letter-spacing: 1px; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); transition: 0.3s; }
+        .ai-active { color: var(--up) !important; border-color: var(--up) !important; animation: blink 2s infinite; }
+
+        .text-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.95), transparent); padding: 20px; text-align: center; }
+        #scene-title { color: var(--gold); font-size: 14px; font-weight: bold; margin-bottom: 5px; }
+        #scene-desc { font-size: 12px; color: #ccc; line-height: 1.4; }
+
+        .control-panel { background: var(--card); padding: 15px; border-radius: 16px; border: 1px solid #222; display: flex; flex-direction: column; gap: 12px; }
+        .input-row { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+        select, input { width: 100%; padding: 12px; background: var(--input-bg); border: 1px solid #444; border-radius: 8px; color: #fff; font-weight: bold; font-size: 14px; outline: none; box-sizing: border-box; }
+        
+        .action-row { display: grid; grid-template-columns: 70px 1fr; gap: 10px; align-items: center; }
+        .chart-container { position: relative; height: 70px; width: 70px; }
+        
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+        .btn { border: none; padding: 14px; border-radius: 8px; font-weight: 700; color: white; font-size: 13px; cursor: pointer; transition: 0.2s; }
+        .btn-buy { background: var(--up); }
+        .btn-sell { background: var(--down); }
+        .btn-auto { grid-column: span 2; background: #333; color: #aaa; border: 1px solid #555; margin-top: 5px; }
+        .btn-auto.on { background: linear-gradient(135deg, var(--gold), #b38f00); color: #000; border: none; box-shadow: 0 0 15px rgba(255, 204, 0, 0.4); }
+
+        /* [핵심] 리얼타임 로그 스타일 */
+        .log-box { margin-top: 15px; padding: 10px; background: #000; border-radius: 12px; height: 160px; overflow-y: scroll; font-size: 11px; color: #aaa; border: 1px solid #333; font-family: 'Courier New', monospace; line-height: 1.6; }
+        .log-line { display: block; border-bottom: 1px dashed #222; padding: 2px 0; }
+        .log-time { color: #666; margin-right: 5px; }
+        .log-info { color: #888; } /* 일반 정보 */
+        .log-buy { color: var(--up); font-weight: bold; } /* 매수 */
+        .log-sell { color: var(--down); font-weight: bold; } /* 매도 */
+        .log-sys { color: var(--gold); } /* 시스템 알림 */
+
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .reunion-glow { animation: glow 2s infinite alternate; border: 2px solid var(--gold); }
+        @keyframes glow { from { box-shadow: 0 0 5px var(--gold); } to { box-shadow: 0 0 20px var(--gold); } }
+    </style>
+</head>
+<body>
+
+    <div class="summary-grid">
+        <div class="stat-card"><small>총 자산 (USDT)</small><div id="total-val" class="val">10,000</div></div>
+        <div class="stat-card"><small>보유 평가금</small><div id="coin-val" class="val" style="color:var(--gold)">0.00</div></div>
+        <div class="stat-card"><small>손익 (P&L)</small><div id="pnl-val" class="val">0.00</div></div>
+        <div class="stat-card"><small>수익률 (ROI)</small><div id="roi-val" class="val">0.00%</div></div>
+    </div>
+
+    <div class="narrative-box" id="narrative-container">
+        <img id="main-img" src="1771031113457.jpg" alt="로딩 중..." onerror="this.src='https://via.placeholder.com/400x300?text=IMAGE+ERROR'">
+        <div class="price-overlay">
+            <div class="label" id="coin-label">BTC LIVE</div>
+            <div id="img-price" class="big-price">$ ---,---</div>
+        </div>
+        <div id="ai-badge" class="ai-watermark">● AI AUTO OFF</div>
+        <div class="text-overlay">
+            <div id="scene-title">SYSTEM READY</div>
+            <div id="scene-desc">실시간 매매 로그가 활성화되었습니다.</div>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <div class="input-row">
+            <select id="coin-select" onchange="changeCoin()">
+                <option value="BTC">BTC</option><option value="ETH">ETH</option><option value="SOL">SOL</option>
+                <option value="XRP">XRP</option><option value="BNB">BNB</option><option value="DOGE">DOGE</option>
+                <option value="ADA">ADA</option><option value="TRX">TRX</option><option value="DOT">DOT</option><option value="SHIB">SHIB</option>
+            </select>
+            <input type="number" id="buy-amount" placeholder="매수 금액" value="1000">
+        </div>
+
+        <div class="action-row">
+            <div class="chart-container"><canvas id="myChart"></canvas></div>
+            <div class="btn-group">
+                <button class="btn btn-buy" onclick="trade('BUY')">수동 매수</button>
+                <button class="btn btn-sell" onclick="trade('SELL')">수동 청산</button>
+                <button id="auto-btn" class="btn btn-auto" onclick="toggleAuto()">🤖 AI 자동매매 시작 [OFF]</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="log-box" id="sys-log">
+        <div style="color:var(--gold); font-weight:bold; padding-bottom:5px; border-bottom:1px solid #333;">
+            > SYSTEM KERNEL CONNECTED...
+        </div>
+    </div>
+
+<script>
+    // --- 변수 ---
+    let cash = 10000; 
+    let coinAmount = 0; 
+    let avgPrice = 0;   
+    let currentPrice = 0; 
+    let targetCoin = "BTC"; 
+    let chartInstance;
+    let isAuto = false;
+    let logCounter = 0; // 로그 과부하 방지용 카운터
+
+    // [이미지: 15장]
+    const imgLib = {
+        sad: [
+            "1771031914844.jpg", "1771031156164.jpg", "1771031143287.jpg",
+            "1771031132125.jpg", "1771031126585.jpg", "1771031150411.jpg",
+            "1771031113457.jpg"
+        ],
+        happy: [
+            "1771031091711.jpg", "1771031161938.jpg", "1771031909245.jpg",
+            "1771031119110.jpg", "1771031097560.jpg", "1771031920544.jpg",
+            "1771031085897.jpg", "1771031103731.jpg"
+        ]
+    };
+
+    function getRandomImg(type) {
+        const arr = imgLib[type];
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function initChart() {
+        const ctx = document.getElementById('myChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: { labels: ['CASH', targetCoin], datasets: [{ data: [100, 0], backgroundColor: ['#222', '#ff9f1a'], borderWidth: 0 }] },
+            options: { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+    }
+
+    // --- 리얼타임 로그 함수 ---
+    function writeLog(type, message) {
+        const logBox = document.getElementById('sys-log');
+        const time = new Date().toLocaleTimeString('ko-KR', {hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        let colorClass = "log-info";
+        
+        if (type === 'BUY') colorClass = "log-buy";
+        if (type === 'SELL') colorClass = "log-sell";
+        if (type === 'SYS') colorClass = "log-sys";
+
+        const html = `<div class="log-line"><span class="log-time">[${time}]</span><span class="${colorClass}">${message}</span></div>`;
+        logBox.innerHTML = html + logBox.innerHTML;
+    }
+
+    function changeCoin() {
+        targetCoin = document.getElementById('coin-select').value;
+        document.getElementById('coin-label').innerText = targetCoin + " LIVE";
+        if (coinAmount > 0) {
+            alert("보유 코인 청산 후 변경 가능합니다.");
+            document.getElementById('coin-select').value = "BTC";
+            targetCoin = "BTC";
+            return;
+        }
+        fetchPrice();
+        writeLog("SYS", `타겟 변경 완료: ${targetCoin} 추적 시작`);
+    }
+
+    function toggleAuto() {
+        isAuto = !isAuto;
+        const btn = document.getElementById('auto-btn');
+        const badge = document.getElementById('ai-badge');
+        
+        if (isAuto) {
+            btn.innerHTML = "🤖 AI 자동매매 중 [ON]";
+            btn.classList.add('on');
+            badge.innerHTML = "● AI AUTO RUNNING";
+            badge.classList.add('ai-active');
+            writeLog("SYS", "AI 자동매매 엔진 가동. 패턴 분석 시작.");
+        } else {
+            btn.innerHTML = "🤖 AI 자동매매 시작 [OFF]";
+            btn.classList.remove('on');
+            badge.innerHTML = "● AI AUTO OFF";
+            badge.classList.remove('ai-active');
+            writeLog("SYS", "AI 자동매매 종료. 수동 모드 전환.");
+        }
+    }
+
+    function checkAutoTrade(roi) {
+        if (!isAuto || currentPrice === 0) return;
+
+        // 로그 과부하 방지: 10번에 1번만 "감시 중" 로그 출력
+        logCounter++;
+        if (logCounter % 10 === 0) {
+            if(coinAmount > 0) writeLog("INFO", `[보유중] 수익률 ${roi.toFixed(2)}% 감시 중...`);
+            else writeLog("INFO", `[대기중] ${targetCoin} 진입 타이밍 스캔 중...`);
+        }
+
+        if (coinAmount === 0) {
+            if (Math.random() > 0.95) {
+                const inputAmt = parseFloat(document.getElementById('buy-amount').value) || 1000;
+                if (cash >= inputAmt) {
+                    writeLog("SYS", "AI 매수 시그널 포착! 진입 시도.");
+                    trade('BUY', true);
+                }
+            }
+        } else {
+            if (roi >= 0.5) {
+                writeLog("SYS", `목표 수익 달성 (+${roi.toFixed(2)}%). 익절 실행.`);
+                trade('SELL', true);
+            } else if (roi <= -1.5) {
+                writeLog("SYS", `손절 라인 이탈 (-${roi.toFixed(2)}%). 방어 실행.`);
+                trade('SELL', true);
+            }
+        }
+    }
+
+    async function fetchPrice() {
+        try {
+            const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${targetCoin}USDT`);
+            const data = await res.json();
+            currentPrice = parseFloat(data.price);
+            
+            let displayPrice = currentPrice < 1 ? currentPrice.toFixed(5) : Math.floor(currentPrice).toLocaleString();
+            document.getElementById('img-price').innerText = `$ ${displayPrice}`;
+            
+            updateDashboard();
+        } catch (e) {}
+    }
+
+    function trade(type, isAutoTrade = false) {
+        if (currentPrice === 0) return alert("시세 로딩 중...");
+        const inputAmount = parseFloat(document.getElementById('buy-amount').value);
+        const prefix = isAutoTrade ? "[AI]" : "[수동]";
+
+        if (type === 'BUY') {
+            if (isNaN(inputAmount) || inputAmount <= 0) return alert("금액 오류");
+            if (cash < inputAmount) return !isAutoTrade && alert("잔액 부족");
+
+            let newCoins = inputAmount / currentPrice;
+            let totalCost = (coinAmount * avgPrice) + inputAmount;
+            coinAmount += newCoins;
+            avgPrice = totalCost / coinAmount;
+            cash -= inputAmount;
+
+            writeLog("BUY", `${prefix} 매수체결 | $${currentPrice.toLocaleString()} | ${newCoins.toFixed(4)} ${targetCoin}`);
+        
+        } else if (type === 'SELL') {
+            if (coinAmount <= 0) return !isAutoTrade && alert("코인 없음");
+            
+            let sellVal = coinAmount * currentPrice;
+            let profitRate = ((currentPrice - avgPrice) / avgPrice) * 100;
+            let profitClass = profitRate >= 0 ? "+" : "";
+            
+            writeLog("SELL", `${prefix} 매도체결 | $${currentPrice.toLocaleString()} | ${profitClass}${profitRate.toFixed(2)}%`);
+            writeLog("SYS", `정산 완료 | 잔액: $${Math.floor(cash + sellVal).toLocaleString()}`);
+            
+            cash += sellVal;
+            coinAmount = 0; 
+            avgPrice = 0;
+        }
+        updateDashboard();
+    }
+
+    function updateDashboard() {
+        const evalCoin = coinAmount * currentPrice;
+        const totalAsset = cash + evalCoin;
+        const roi = coinAmount > 0 ? ((currentPrice - avgPrice) / avgPrice) * 100 : 0;
+
+        document.getElementById('total-val').innerText = Math.floor(totalAsset).toLocaleString();
+        document.getElementById('coin-val').innerText = Math.floor(evalCoin).toLocaleString();
+        
+        const pnlEl = document.getElementById('pnl-val');
+        const roiEl = document.getElementById('roi-val');
+        const profit = evalCoin - (coinAmount * avgPrice);
+        
+        pnlEl.innerText = profit > 0 ? `+${profit.toFixed(2)}` : profit.toFixed(2);
+        roiEl.innerText = roi.toFixed(2) + "%";
+        
+        const colorClass = profit >= 0 ? "val up" : "val down";
+        pnlEl.className = colorClass;
+        roiEl.className = colorClass;
+
+        if(chartInstance) {
+            chartInstance.data.datasets[0].data = [cash, evalCoin];
+            chartInstance.update();
+        }
+
+        updateNarrative(roi);
+        checkAutoTrade(roi);
+    }
+
+    function updateNarrative(roi) {
+        const img = document.getElementById('main-img');
+        const title = document.getElementById('scene-title');
+        const desc = document.getElementById('scene-desc');
+        const box = document.getElementById('narrative-container');
+
+        if (coinAmount === 0) {
+            if (!img.src.includes("177")) img.src = getRandomImg('sad'); 
+            title.innerText = "SEARCHING...";
+            desc.innerText = `${targetCoin} 진입 타이밍 분석 중`;
+            box.className = "narrative-box";
+        } else if (roi >= 0.2) { 
+            if (img.getAttribute('data-mode') !== 'happy' || Math.random() > 0.98) {
+                img.src = getRandomImg('happy');
+                img.setAttribute('data-mode', 'happy');
+                writeLog("INFO", "서사 변경: 행복 모드 (수익 구간)");
+            }
+            title.innerText = "PROFIT ZONE";
+            desc.innerText = "수익 실현 구간. 긍정적 흐름.";
+            box.className = "narrative-box reunion-glow";
+        } else {
+            if (img.getAttribute('data-mode') !== 'sad' || Math.random() > 0.98) {
+                img.src = getRandomImg('sad');
+                img.setAttribute('data-mode', 'sad');
+                writeLog("INFO", "서사 변경: 인내 모드 (손실 구간)");
+            }
+            title.innerText = "HOLDING...";
+            desc.innerText = "조정 구간. 반등 대기 중.";
+            box.className = "narrative-box";
+        }
+    }
+
+    initChart();
+    setInterval(fetchPrice, 1500); 
+</script>
+</body>
+</html>
