@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>주군의 AI AUTO (Web Cloud)</title>
+    <title>주군의 AI AUTO (List Fixed)</title>
     <style>
         /* [스타일] 유니버설 뷰포트 & 다크 테마 */
         html { background-color: #000; height: 100%; }
         body { 
             background: #0b0e11; color: #eaecef; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            margin: 0 auto; padding: 16px; padding-bottom: 120px; 
+            margin: 0 auto; padding: 16px; padding-bottom: 150px; /* 하단 여백 충분히 확보 */
             max-width: 500px; min-height: 100vh; 
             box-shadow: 0 0 20px rgba(0,0,0,0.5); box-sizing: border-box;
         }
@@ -38,7 +38,8 @@
         /* 터미널 */
         .terminal-box { 
             background: #161a1e; border: 1px solid #2b3139; border-radius: 20px;
-            padding: 16px; margin-bottom: 20px; min-height: 200px; height: auto; 
+            padding: 16px; margin-bottom: 20px; 
+            min-height: 200px; height: auto; /* 높이 자동 조절 */
             box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
         }
         .terminal-header { border-bottom: 1px solid #2b3139; padding-bottom: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
@@ -151,9 +152,7 @@
             <span id="ai-activity-text" class="ai-status-text"></span>
         </div>
         <div id="slot-container" class="slot-container">
-            <div id="empty-msg" style="text-align:center;color:#444;padding:40px 0;font-size:12px;">NO POSITIONS</div>
-        </div>
-        <div style="height: 20px;"></div>
+            </div>
     </div>
 
     <div class="control-panel" id="control-panel">
@@ -167,9 +166,6 @@
                 </optgroup>
                 <optgroup label="AI & RWA">
                     <option value="RNDR">RNDR</option><option value="FET">FET</option><option value="WLD">WLD</option><option value="TAO">TAO</option><option value="INJ">INJ</option><option value="JASMY">JASMY</option><option value="GALA">GALA</option><option value="SAND">SAND</option>
-                </optgroup>
-                <optgroup label="DEFI & LEGACY">
-                    <option value="UNI">UNI</option><option value="AAVE">AAVE</option><option value="MKR">MKR</option><option value="SNX">SNX</option><option value="LTC">LTC</option><option value="BCH">BCH</option><option value="ETC">ETC</option><option value="EOS">EOS</option><option value="XLM">XLM</option><option value="ALGO">ALGO</option>
                 </optgroup>
                 <optgroup label="MEME SQUAD">
                     <option value="DOGE">DOGE</option><option value="SHIB">SHIB</option><option value="PEPE">PEPE</option><option value="WIF">WIF</option><option value="FLOKI">FLOKI</option><option value="BONK">BONK</option><option value="BOME">BOME</option><option value="MEME">MEME</option>
@@ -216,7 +212,7 @@
         </button>
     </div>
 
-    <div class="log-box" id="sys-log">> WEB-NATIVE SYSTEM READY. GITHUB HOSTING OPTIMIZED.</div>
+    <div class="log-box" id="sys-log">> SYSTEM INITIALIZED.</div>
 
 <script>
     let cash = 10000; 
@@ -226,40 +222,47 @@
     let isDCA = false;
     let wakeLock = null;
     
-    // [중요] 50개 코인 초기 시세 가상 설정 (서버 없이 돌아가기 위함)
+    // 코인 초기 시세 생성
     const coins = ["BTC","ETH","SOL","BNB","XRP","ZRX","ONDO","SUI","ADA","AVAX","DOT","TRX","MATIC","LINK","ATOM","NEAR","APT","ARB","OP","STX","RNDR","FET","WLD","TAO","INJ","JASMY","GALA","SAND","UNI","AAVE","MKR","SNX","LTC","BCH","ETC","EOS","XLM","ALGO","DOGE","SHIB","PEPE","WIF","FLOKI","BONK","BOME","MEME"];
-    
-    // 초기화: 랜덤 가격 생성
     coins.forEach(c => {
         let base = 100;
-        if(c==='BTC') base=65000; if(c==='ETH') base=3500; if(c==='SOL') base=150;
-        prices[c] = base + (Math.random()*10); 
+        if(c==='BTC') base=65000; if(c==='ETH') base=3500; if(c==='SOL') base=150; if(c==='XRP') base=0.6;
+        prices[c] = base; 
     });
 
     const MAX_TOTAL_SLOTS = 20;  
     const MAX_MANUAL_SLOTS = 10; 
 
-    // [핵심] 가상 서버 엔진 (Virtual Java Engine)
-    // 깃허브에서 돌아갈 때 실제 서버 역할을 대신 수행합니다.
-    async function virtualServerEngine() {
-        // 1. 시세 변동 시뮬레이션 (랜덤 워크)
+    // [핵심 Fix] 앱 시작 시 강제로 데이터 채우기 (데모 모드)
+    function initDemoPositions() {
+        if(Object.keys(portfolio).length === 0) {
+            // 강제 진입 5종목
+            executeEntry("BTC", 1000, "SPOT", "LONG", 1, false, "(Auto Init)");
+            executeEntry("ETH", 1000, "FUT", "LONG", 5, false, "(Auto Init)");
+            executeEntry("SOL", 1000, "FUT", "LONG", 10, false, "(Auto Init)");
+            executeEntry("XRP", 1000, "FUT", "SHORT", 5, false, "(Auto Init)");
+            executeEntry("DOGE", 500, "FUT", "LONG", 20, false, "(Auto Init)");
+            addLog("시스템", "초기 운용 슬롯 5개 배치 완료", "var(--gold)");
+        }
+    }
+
+    // 가상 서버 엔진
+    function virtualServerEngine() {
+        // 1. 시세 변동
         coins.forEach(sym => {
-            const volatility = 0.005; // 변동성
+            const volatility = 0.003; 
             const change = 1 + (Math.random() - 0.5) * volatility;
             prices[sym] = prices[sym] * change;
         });
 
-        // 2. AI 판단 로직 (내장형)
+        // 2. AI 로직
         const activity = document.getElementById('ai-activity-text');
         
         if (isAuto) {
-            // 랜덤하게 타겟 선정 및 RSI 계산 흉내
             const target = coins[Math.floor(Math.random() * coins.length)];
             const mockRSI = Math.floor(Math.random() * 100);
-            
             activity.innerText = `AI 분석중: ${target} (RSI: ${mockRSI})`;
 
-            // 매수 신호 발생 (RSI < 30)
             if (mockRSI < 30) {
                 if (!portfolio[target] && Object.keys(portfolio).length < 20) {
                     const mode = document.getElementById('ai-mode-select').value;
@@ -267,19 +270,16 @@
                     if(mode === "AGGRESSIVE") { lev = 20; market = "FUT"; }
                     else if(mode === "MODERATE") { lev = 5; market = "FUT"; }
                     
-                    // 30% 확률로 진입 (빈번한 매매 방지)
-                    if(Math.random() > 0.7) {
+                    if(Math.random() > 0.8) {
                         executeEntry(target, 1000, market, "LONG", lev, true, `(WebAI RSI:${mockRSI})`);
                     }
                 }
             }
-        } else if (isDCA) {
-            activity.innerText = "DCA 감시중...";
         } else {
-            activity.innerText = "대기중...";
+            activity.innerText = isDCA ? "DCA 감시중..." : "대기중...";
         }
 
-        // 3. DCA 로직
+        // 3. DCA
         if (isDCA) {
             const gap = parseFloat(document.getElementById('dca-gap').value);
             const mult = parseFloat(document.getElementById('dca-mult').value);
@@ -287,43 +287,23 @@
                 const d = portfolio[sym];
                 const p = prices[sym];
                 
-                const positionSize = d.margin * d.lev;
-                const coinSize = positionSize / d.avg;
-                let pnl = d.side === "LONG" ? (p - d.avg) * coinSize : (d.avg - p) * coinSize;
-                const roe = (pnl / d.margin) * 100;
+                // PnL 계산 (단순화)
+                let pnlPercent = 0;
+                if(d.side === "LONG") pnlPercent = ((p - d.avg) / d.avg) * 100 * d.lev;
+                else pnlPercent = ((d.avg - p) / d.avg) * 100 * d.lev;
 
-                if (roe <= gap && Math.random() > 0.98) {
+                if (pnlPercent <= gap && Math.random() > 0.98) {
                     const addAmount = 1000 * mult;
                     if (cash >= addAmount) executeEntry(sym, addAmount, d.market, d.side, d.lev, true, `(DCA)`);
                 }
             }
         }
 
-        // 4. 익절/손절 로직
-        if (isAuto) {
-            Object.keys(portfolio).forEach(sym => {
-                const d = portfolio[sym];
-                const p = prices[sym];
-                const coinSize = (d.margin * d.lev) / d.avg;
-                let pnl = d.side === "LONG" ? (p - d.avg) * coinSize : (d.avg - p) * coinSize;
-                const roe = (pnl / d.margin) * 100;
-                
-                let targetProfit = 5.0;
-                const mode = document.getElementById('ai-mode-select').value;
-                if (mode === "AGGRESSIVE") targetProfit = 15.0;
-                
-                if (roe >= targetProfit || roe <= -10.0) { closePosition(sym); }
-            });
-        }
-
         checkLiquidation();
         updateDashboard();
     }
 
-    // ------------------------------------------------------------
-    // [UI 및 시스템 로직]
-    // ------------------------------------------------------------
-    
+    // 화면 꺼짐 방지
     async function toggleWakeLock() {
         const btn = document.getElementById('wake-lock-btn');
         if ('wakeLock' in navigator) {
@@ -397,13 +377,11 @@
         isDCA = !isDCA;
         const btn = document.getElementById('dca-btn');
         if(isDCA) { 
-            btn.innerText = "ON (감시중)"; 
-            btn.classList.add('btn-dca-on'); 
+            btn.innerText = "ON (감시중)"; btn.classList.add('btn-dca-on'); 
             addLog("시스템", "스마트 DCA 가동", "var(--up)"); 
         } 
         else { 
-            btn.innerText = "OFF"; 
-            btn.classList.remove('btn-dca-on'); 
+            btn.innerText = "OFF"; btn.classList.remove('btn-dca-on'); 
             addLog("시스템", "스마트 DCA 정지", "#888"); 
         }
     }
@@ -424,13 +402,16 @@
             const currentTotal = Object.keys(portfolio).length;
             if (isAutoTrade) { if (currentTotal >= MAX_TOTAL_SLOTS) return; } 
             else {
-                let manualCount = 0;
-                for(let k in portfolio) { if(!portfolio[k].isAuto) manualCount++; }
-                if (manualCount >= MAX_MANUAL_SLOTS) { alert(`⛔ 수동 제한(${MAX_MANUAL_SLOTS}개) 도달!`); return; }
-                if (currentTotal >= MAX_TOTAL_SLOTS) { alert("⛔ 전체 슬롯 가득 참!"); return; }
+                if (!reason.includes("Init")) { // 초기화가 아닐때만 체크
+                    let manualCount = 0;
+                    for(let k in portfolio) { if(!portfolio[k].isAuto) manualCount++; }
+                    if (manualCount >= MAX_MANUAL_SLOTS) { alert(`⛔ 수동 제한(${MAX_MANUAL_SLOTS}개) 도달!`); return; }
+                    if (currentTotal >= MAX_TOTAL_SLOTS) { alert("⛔ 전체 슬롯 가득 참!"); return; }
+                }
             }
             portfolio[symbol] = { avg: price, margin: marginUSD, market: market, side: side, lev: lev, isAuto: isAutoTrade };
             let badge = isAutoTrade ? "[AI]" : "[수동]";
+            if (reason.includes("Init")) badge = "[시스템]";
             let color = side==="LONG" ? "var(--up)" : "var(--down)";
             addLog(badge, `${symbol} ${side} x${lev} 진입`, color);
         }
@@ -468,19 +449,23 @@
     
     function updateDashboard() {
         const container = document.getElementById('slot-container');
-        if (Object.keys(portfolio).length === 0) {
+        // 빈 메시지 처리
+        const keys = Object.keys(portfolio);
+        if (keys.length === 0) {
             if(!document.getElementById('empty-msg')) container.innerHTML = '<div id="empty-msg" style="text-align:center;color:#444;padding:40px 0;font-size:12px;">NO POSITIONS</div>';
         } else {
             if(document.getElementById('empty-msg')) document.getElementById('empty-msg').remove();
         }
 
         let totalPnL = 0; let usedMargin = 0; let count = 0;
+        
         for (let sym in portfolio) {
             count++;
             const d = portfolio[sym];
             const p = prices[sym] || d.avg;
             const liq = getLiqPrice(d);
             
+            // PnL 계산
             const positionSize = d.margin * d.lev;
             const coinSize = positionSize / d.avg;
             let pnl = d.side === "LONG" ? (p - d.avg) * coinSize : (d.avg - p) * coinSize;
@@ -489,16 +474,7 @@
             totalPnL += pnl; usedMargin += d.margin;
             const currentEquity = d.margin + pnl;
 
-            let distText = ""; let dangerClass = ""; let riskIcon = "";
-            if (d.lev >= 20) riskIcon = "🔥"; if (d.lev >= 50) riskIcon = "💀";
-
-            if (d.lev > 1) {
-                const gapPrice = Math.abs(p - liq);
-                const gapPercent = ((liq - p) / p) * 100;
-                distText = `Gap: $${gapPrice.toFixed(2)} (${gapPercent > 0 ? '+' : ''}${gapPercent.toFixed(1)}%)`;
-                if (Math.abs(gapPercent) < 3.0) dangerClass = "danger-dist";
-            }
-
+            // DOM 생성
             let slot = document.getElementById(`slot-${sym}`);
             if (!slot) {
                 slot = document.createElement('div');
@@ -533,6 +509,7 @@
             }
             
             // 데이터 업데이트
+            let riskIcon = ""; if (d.lev >= 20) riskIcon = "🔥"; if (d.lev >= 50) riskIcon = "💀";
             slot.querySelector('.size-badge').innerText = riskIcon + ' Size: $' + Math.floor(positionSize).toLocaleString();
             slot.querySelector('.val-entry').innerText = d.avg.toLocaleString(undefined, {maximumFractionDigits:4});
             slot.querySelector('.val-mark').innerText = p.toLocaleString(undefined, {maximumFractionDigits:4});
@@ -545,9 +522,11 @@
             const liqValEl = slot.querySelector('.liq-val');
             const liqDistEl = slot.querySelector('.liq-dist');
             if (d.lev > 1) {
+                const gapPercent = ((liq - p) / p) * 100;
                 liqValEl.innerText = `청산: ${liq < 1 ? liq.toFixed(5) : liq.toLocaleString()}`;
-                liqDistEl.innerText = distText;
-                liqDistEl.className = "liq-dist " + dangerClass; 
+                liqDistEl.innerText = `Gap: (${Math.abs(gapPercent).toFixed(1)}%)`;
+                if (Math.abs(gapPercent) < 3.0) liqDistEl.className = "liq-dist danger-dist";
+                else liqDistEl.className = "liq-dist";
             } else { liqValEl.innerText = "청산 없음 (1x)"; liqDistEl.innerText = ""; }
             
             const pnlText = slot.querySelector('.pnl-text');
@@ -557,16 +536,17 @@
             pnlValEl.innerText = (pnl >= 0 ? '+' : '') + pnl.toFixed(2);
             pnlValEl.style.color = roe >= 0 ? "var(--up)" : "var(--down)";
 
-            if (roe >= 0) { slot.classList.remove('minus'); slot.classList.add('plus'); } 
-            else { slot.classList.remove('plus'); slot.classList.add('minus'); }
-            
+            // 플래시 효과
             slot.classList.remove('flash-up', 'flash-down');
             void slot.offsetWidth; 
-            if (p > prevP) slot.classList.add('flash-up'); else if (p < prevP) slot.classList.add('flash-down');
+            if (p > d.avg) slot.classList.add('flash-up'); else if (p < d.avg) slot.classList.add('flash-down');
         }
+        
+        // 삭제된 슬롯 DOM 제거
         const existingSlots = container.querySelectorAll('.slot-item');
         existingSlots.forEach(el => { if (!portfolio[el.id.replace('slot-', '')]) el.remove(); });
 
+        // [핵심 Fix] 상단 통계 업데이트
         document.getElementById('total-val').innerText = (cash + usedMargin + totalPnL).toLocaleString(undefined, {minimumFractionDigits: 2});
         document.getElementById('active-count').innerText = count;
         document.getElementById('pnl-val').innerText = (totalPnL >= 0 ? '+' : '') + totalPnL.toFixed(2);
@@ -576,7 +556,7 @@
     function closePosition(symbol) {
         if (!portfolio[symbol]) return;
         const d = portfolio[symbol];
-        const p = prices[symbol];
+        const p = prices[symbol] || d.avg;
         const coinSize = (d.margin * d.lev) / d.avg;
         let pnl = d.side === "LONG" ? (p - d.avg) * coinSize : (d.avg - p) * coinSize;
         cash += d.margin + pnl;
@@ -592,7 +572,7 @@
     }
 
     handleMarketChange();
-    // [중요] 가상 서버 엔진 가동 (1초 간격)
+    initDemoPositions(); // [시작 시 강제 실행]
     setInterval(virtualServerEngine, 1000); 
 </script>
 </body>
