@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEXUS COMBAT</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap');
+
+        body {
+            margin: 0; background: #000; color: #39ff14;
+            font-family: 'Orbitron', sans-serif; overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 레이더 격자 배경 */
+        .radar-screen {
+            position: absolute; inset: 0;
+            background-image: 
+                radial-gradient(circle, rgba(0, 255, 0, 0.1) 1px, transparent 1px),
+                linear-gradient(rgba(0, 255, 0, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 0, 0.05) 1px, transparent 1px);
+            background-size: 100px 100px, 40px 40px, 40px 40px;
+            background-position: center;
+        }
+
+        /* 중앙 조준경 */
+        .crosshair {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px; height: 250px;
+            border: 2px solid rgba(57, 255, 20, 0.3);
+            border-radius: 50%; z-index: 10;
+        }
+        .crosshair::before, .crosshair::after {
+            content: ''; position: absolute; background: #39ff14;
+        }
+        .crosshair::before { top: 50%; left: -20px; width: 290px; height: 1px; }
+        .crosshair::after { left: 50%; top: -20px; height: 290px; width: 1px; }
+
+        .lock-on-box {
+            position: absolute; border: 2px solid #ff073a;
+            width: 100px; height: 100px; display: none;
+            transition: all 0.1s ease; z-index: 5;
+        }
+
+        /* 적/아군 비행기 유닛 */
+        .unit {
+            position: absolute; font-size: 24px; transition: all 2s linear;
+            display: flex; flex-direction: column; align-items: center; gap: 5px;
+        }
+        .unit-label { font-size: 10px; background: rgba(0,0,0,0.7); padding: 2px 4px; }
+        .enemy { color: #ff073a; text-shadow: 0 0 10px #ff073a; } /* 매도/하락 */
+        .friend { color: #00c6ff; text-shadow: 0 0 10px #00c6ff; } /* 매수/상승 */
+
+        /* HUD 패널 */
+        .hud-top {
+            position: absolute; top: 20px; width: 100%; display: flex;
+            justify-content: space-around; font-size: 14px;
+        }
+        .hud-bottom {
+            position: absolute; bottom: 30px; width: 100%; text-align: center;
+        }
+
+        /* 발사 버튼 (매수/매도 실행) */
+        .fire-btn {
+            background: #111; border: 2px solid #39ff14; color: #39ff14;
+            padding: 15px 40px; font-size: 20px; font-weight: 900;
+            border-radius: 5px; cursor: pointer; display: none;
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
+        }
+        .fire-btn.sell-mode { border-color: #ff073a; color: #ff073a; }
+
+        /* 폭발 효과 */
+        .explosion {
+            position: absolute; width: 50px; height: 50px;
+            background: orange; border-radius: 50%; filter: blur(10px);
+            animation: explode 0.5s forwards;
+        }
+        @keyframes explode { to { transform: scale(3); opacity: 0; } }
+
+    </style>
+</head>
+<body>
+
+<div class="radar-screen" id="radar">
+    </div>
+
+<div class="crosshair">
+    <div class="lock-on-box" id="lockBox"></div>
+</div>
+
+<div class="hud-top">
+    <div>TARGET: BTC/KRW</div>
+    <div>ALT: <span id="altVal">0</span>M (ASSET)</div>
+    <div>FUEL: 98%</div>
+</div>
+
+<div class="hud-bottom">
+    <div style="font-size: 40px; margin-bottom: 20px;" id="pnlDisplay">0.00%</div>
+    <button id="fireBtn" class="fire-btn" onclick="executeTrade()">FIRE (BUY)</button>
+</div>
+
+<script>
+    const radar = document.getElementById('radar');
+    const lockBox = document.getElementById('lockBox');
+    const fireBtn = document.getElementById('fireBtn');
+    const pnlDisplay = document.getElementById('pnlDisplay');
+
+    let currentMode = 'READY'; // READY, BUY, SELL
+    let targetUnit = null;
+
+    // 1. 비행기 생성 및 관리
+    function createUnit(type) {
+        const unit = document.createElement('div');
+        unit.className = `unit ${type === 'BUY' ? 'friend' : 'enemy'}`;
+        unit.innerHTML = `
+            <i class="fas fa-fighter-jet" style="transform: rotate(${Math.random()*360}deg)"></i>
+            <span class="unit-label">${type} UNIT</span>
+        `;
+        
+        // 랜덤 시작 위치
+        unit.style.left = Math.random() * 100 + '%';
+        unit.style.top = Math.random() * 100 + '%';
+        
+        radar.appendChild(unit);
+
+        // 일정 시간 후 이동 및 소멸
+        setTimeout(() => {
+            unit.style.left = Math.random() * 100 + '%';
+            unit.style.top = Math.random() * 100 + '%';
+        }, 100);
+
+        return unit;
+    }
+
+    // 2. 조준 로직 (전략 엔진과 연동)
+    function updateStrategy(pnl, rsi) {
+        // RSI가 30 이하일 때 매수 타겟 등장
+        if (rsi < 35 && currentMode === 'READY') {
+            currentMode = 'BUY';
+            targetUnit = createUnit('BUY');
+            lockOn(targetUnit, 'BUY');
+        } 
+        // 수익률이 5% 이상이거나 손절 시 매도 타겟 등장
+        else if (pnl > 5 || pnl < -3) {
+            currentMode = 'SELL';
+            targetUnit = createUnit('SELL');
+            lockOn(targetUnit, 'SELL');
+        }
+
+        pnlDisplay.innerText = (pnl > 0 ? '+' : '') + pnl.toFixed(2) + '%';
+        pnlDisplay.style.color = pnl >= 0 ? '#39ff14' : '#ff073a';
+    }
+
+    function lockOn(unit, type) {
+        lockBox.style.display = 'block';
+        fireBtn.style.display = 'inline-block';
+        fireBtn.innerText = `FIRE (${type})`;
+        fireBtn.className = `fire-btn ${type === 'SELL' ? 'sell-mode' : ''}`;
+
+        // 조준 박스가 비행기를 따라다님
+        const moveLock = setInterval(() => {
+            if(!unit.parentElement) {
+                clearInterval(moveLock);
+                return;
+            }
+            const rect = unit.getBoundingClientRect();
+            lockBox.style.left = (rect.left - (window.innerWidth/2) + 50) + 'px';
+            lockBox.style.top = (rect.top - (window.innerHeight/2) + 50) + 'px';
+            lockBox.style.display = 'block';
+        }, 50);
+    }
+
+    function executeTrade() {
+        // 격추 애니메이션
+        const rect = targetUnit.getBoundingClientRect();
+        const exp = document.createElement('div');
+        exp.className = 'explosion';
+        exp.style.left = rect.left + 'px';
+        exp.style.top = rect.top + 'px';
+        document.body.appendChild(exp);
+
+        targetUnit.remove();
+        lockBox.style.display = 'none';
+        fireBtn.style.display = 'none';
+        
+        alert(`${currentMode} 체결 완료!`);
+        currentMode = 'READY';
+        
+        setTimeout(() => exp.remove(), 500);
+    }
+
+    // 시뮬레이션
+    setInterval(() => {
+        const fakePnl = (Math.random() - 0.5) * 10;
+        const fakeRsi = Math.random() * 100;
+        updateStrategy(fakePnl, fakeRsi);
+    }, 3000);
+
+</script>
+</body>
+</html>
